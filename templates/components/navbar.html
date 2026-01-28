@@ -1,0 +1,12 @@
+<header class="header">
+    <a href="{{ url_for('home.dashboard') }}" class="logo">TUT<span>0</span>HUB</a>
+    <form action="{{ url_for('search.search') }}" method="GET">
+        <input type="text" name="q" placeholder="Buscar videos..." value="{{ query or '' }}">
+        <button type="submit">🔍</button>
+    </form>
+    <nav>
+        <a href="{{ url_for('home.dashboard') }}">Inicio</a>
+        <a href="{{ url_for('home.favorites') }}">Favoritos</a>
+        <a href="{{ url_for('auth.logout') }}">Salir</a>
+    </nav>
+</header>

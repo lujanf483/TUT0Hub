@@ -1,0 +1,12 @@
+.page-login { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+.login-container { background: #1e1e1e; padding: 40px; border-radius: 20px; width: 400px; text-align: center; }
+.brand-logo { font-size: 2.5rem; font-weight: 900; margin-bottom: 20px; }
+.brand-logo span { color: #ffb700; }
+.input-group { margin-bottom: 20px; text-align: left; }
+.input-group label { display: block; margin-bottom: 8px; color: #aaa; }
+.input-group input { width: 100%; padding: 12px; background: #121212; border: 2px solid transparent; border-radius: 8px; color: #fff; }
+.input-group input:focus { outline: none; border-color: #ffb700; }
+.btn-primary { width: 100%; padding: 14px; background: #ffb700; color: #000; border: none; border-radius: 50px; font-weight: 800; cursor: pointer; }
+.btn-primary:hover { background: #ffa000; }
+.login-container p { margin-top: 20px; color: #aaa; }
+.login-container a { color: #ffb700; }

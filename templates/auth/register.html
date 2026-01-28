@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+{% block body_class %}page-login{% endblock %}
+{% block content %}
+<div class="login-container">
+    <div class="brand-logo">TUT<span>0</span>HUB</div>
+    <h2>Crear Cuenta</h2>
+    
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="input-group">
+            <label>Usuario</label>
+            <input type="text" name="username" required minlength="3" maxlength="80" placeholder="Mínimo 3 caracteres">
+        </div>
+        <div class="input-group">
+            <label>Email</label>
+            <input type="email" name="email" required placeholder="tu@email.com">
+        </div>
+        <div class="input-group">
+            <label>Contraseña</label>
+            <input type="password" name="password" required minlength="8" placeholder="Mínimo 8 caracteres">
+        </div>
+        <div class="input-group">
+            <label>Confirmar Contraseña</label>
+            <input type="password" name="password_confirm" required minlength="8" placeholder="Repite tu contraseña">
+        </div>
+        <button type="submit" class="btn-primary">REGISTRARSE</button>
+    </form>
+    
+    <p>¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión</a></p>
+</div>
+{% endblock %}

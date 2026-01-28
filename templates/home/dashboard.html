@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+{% block body_class %}page-dashboard{% endblock %}
+{% block header %}{% include 'components/navbar.html' %}{% endblock %}
+{% block content %}
+<div class="dashboard-content">
+    <h1>{{ page_title }}</h1>
+    {% if videos %}
+        <div class="video-grid">
+        {% for video in videos %}
+            <div class="card video-card">
+                <a href="https://youtube.com/watch?v={{ video.id }}" target="_blank" class="video-thumbnail">
+                    <img src="{{ video.thumbnail }}" alt="{{ video.title }}">
+                    <div class="video-overlay">
+                        <span class="play-icon">▶</span>
+                    </div>
+                </a>
+                <div class="video-info">
+                    <div class="video-header">
+                        <h3 class="video-title">{{ video.title[:60] }}{% if video.title|length > 60 %}...{% endif %}</h3>
+                        <button class="favorite-btn {% if video.id in favorite_ids %}active{% endif %}" 
+                                data-video-id="{{ video.id }}" 
+                                data-title="{{ video.title }}"
+                                data-channel="{{ video.channel }}"
+                                data-description="{{ video.description }}"
+                                data-thumbnail="{{ video.thumbnail }}">
+                            {% if video.id in favorite_ids %}★{% else %}☆{% endif %}
+                        </button>
+                    </div>
+                    <p class="video-channel">{{ video.channel }}</p>
+                    <p class="video-description">{{ video.description[:100] }}{% if video.description|length > 100 %}...{% endif %}</p>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% else %}
+        <p>No hay videos disponibles. {% if page_title == 'Búsqueda' %}Intenta con otra búsqueda.{% else %}Configura tu YouTube API Key.{% endif %}</p>
+    {% endif %}
+</div>
+
+<script>
+document.querySelectorAll('.favorite-btn').forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        const videoId = this.dataset.videoId;
+        const videoData = {
+            id: videoId,
+            title: this.dataset.title,
+            channel: this.dataset.channel,
+            description: this.dataset.description,
+            thumbnail: this.dataset.thumbnail
+        };
+        
+        try {
+            const response = await fetch(`/toggle-favorite/${videoId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(videoData)
+            });
+            
+            if (response.ok) {
+                this.classList.toggle('active');
+                this.textContent = this.classList.contains('active') ? '★' : '☆';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+.page-dashboard { padding-top: 65px; }
+.dashboard-content { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+.dashboard-content h1 { color: #fff; margin-bottom: 30px; }
+.video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.card { background: #1e1e1e; border-radius: 12px; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; }
+.card:hover { transform: translateY(-5px); box-shadow: 0 8px 24px rgba(255, 183, 0, 0.2); }
+
+.video-card { padding: 0; }
+.video-thumbnail { display: block; position: relative; width: 100%; overflow: hidden; background: #000; aspect-ratio: 16/9; }
+.video-thumbnail img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+.video-card:hover .video-thumbnail img { transform: scale(1.05); }
+.video-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+.video-card:hover .video-overlay { opacity: 1; }
+.play-icon { color: #ffb700; font-size: 2.5rem; }
+
+.video-info { padding: 15px; }
+.video-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.video-title { color: #fff; margin: 0 0 5px 0; font-size: 0.95rem; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+.favorite-btn { background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer; padding: 0; transition: transform 0.2s, color 0.2s; flex-shrink: 0; }
+.favorite-btn:hover { transform: scale(1.2); color: #ffb700; }
+.favorite-btn.active { color: #ffb700; }
+.video-channel { color: #aaa; margin: 5px 0; font-size: 0.85rem; }
+.video-description { color: #888; margin: 0; font-size: 0.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

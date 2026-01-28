@@ -1,0 +1,22 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #fff; }
+.flash-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+.flash { padding: 15px 20px; margin-bottom: 10px; border-radius: 8px; background: #1e1e1e; }
+.flash-success { border-left: 4px solid #4caf50; }
+.flash-danger { border-left: 4px solid #f44336; }
+.flash-info { border-left: 4px solid #2196f3; }
+.flash button { background: none; border: none; color: #fff; cursor: pointer; float: right; }
+
+/* Navbar mejorado */
+.header { position: fixed; top: 0; left: 0; right: 0; height: 65px; background: rgba(15,15,15,0.98); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 1000; border-bottom: 1px solid #333; gap: 20px; }
+.logo { font-size: 1.75rem; font-weight: 900; color: #fff; text-decoration: none; white-space: nowrap; }
+.logo span { color: #ffb700; }
+.header form { display: flex; gap: 5px; flex: 1; max-width: 400px; }
+.header input { flex: 1; padding: 8px 15px; background: #121212; border: 1px solid #333; border-radius: 20px; color: #fff; font-size: 0.9rem; }
+.header input::placeholder { color: #666; }
+.header input:focus { outline: none; border-color: #ffb700; }
+.header button { padding: 8px 15px; background: #ffb700; border: none; border-radius: 20px; color: #000; cursor: pointer; font-weight: 600; }
+.header button:hover { background: #ffc933; }
+.header nav { display: flex; gap: 15px; white-space: nowrap; }
+.header nav a { color: #aaa; text-decoration: none; transition: color 0.3s; }
+.header nav a:hover { color: #ffb700; }
