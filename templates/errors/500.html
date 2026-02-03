@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Error del servidor | TUT0hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}">
+</head>
+<body class="error-page">
+    <div class="error-container">
+        <div class="error-code">500</div>
+        <h1>Error del servidor</h1>
+        <p class="error-message">
+            Oops! Algo salió mal en nuestro servidor. Ya estamos trabajando para solucionarlo.
+        </p>
+        <p class="error-suggestion">
+            Por favor, intenta nuevamente en unos minutos. Si el problema persiste, contáctanos.
+        </p>
+        <div class="error-actions">
+            <a href="{{ url_for('home.dashboard') }}" class="btn-primary">
+                Volver al Inicio
+            </a>
+            <a href="javascript:location.reload()" class="btn-secondary">
+                Recargar Página
+            </a>
+        </div>
+        <div class="error-footer">
+            <p>Código de error: 500 | <a href="mailto:soporte@tut0hub.com">Reportar problema</a></p>
+        </div>
+    </div>
+</body>
+</html>

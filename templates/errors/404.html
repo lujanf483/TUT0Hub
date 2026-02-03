@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Página no encontrada | TUT0hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}">
+</head>
+<body class="error-page">
+    <div class="error-container">
+        <div class="error-code">404</div>
+        <h1>Página no encontrada</h1>
+        <p class="error-message">
+            Lo sentimos, la página que buscas no existe o ha sido movida.
+        </p>
+        <p class="error-suggestion">
+            Verifica que la URL esté correctamente escrita o regresa al inicio para encontrar lo que buscas.
+        </p>
+        <div class="error-actions">
+            <a href="{{ url_for('home.dashboard') }}" class="btn-primary">
+                Volver al Inicio
+            </a>
+            <a href="{{ url_for('search.search') }}" class="btn-secondary">
+                Buscar Videos
+            </a>
+        </div>
+        <div class="error-footer">
+            <p>¿Crees que esto es un error? <a href="mailto:soporte@tut0hub.com">Contáctanos</a></p>
+        </div>
+    </div>
+</body>
+</html>
