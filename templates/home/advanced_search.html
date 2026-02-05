@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/advanced_search.css') }}">
+{% endblock %}
+{% block body_class %}page-dashboard{% endblock %}
+{% block header %}{% include 'components/navbar.html' %}{% endblock %}
+{% block content %}
+<div class="dashboard-content">
+    <h1>🔍 Búsqueda Avanzada</h1>
+    
+    <form method="GET" action="{{ url_for('search.advanced_search') }}" class="advanced-search-form">
+        <div class="search-grid">
+            <!-- Búsqueda por palabras clave -->
+            <div class="input-group">
+                <label for="q">Palabras clave</label>
+                <input type="text" 
+                       id="q" 
+                       name="q" 
+                       placeholder="Ej: tutorial python" 
+                       value="{{ query or '' }}"
+                       pattern="[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s\-]+"
+                       title="Solo letras, números, espacios y guiones">
+            </div>
+
+            <!-- Filtro por categoría -->
+            <div class="input-group">
+                <label for="category">Categoría</label>
+                <select id="category" name="category">
+                    <option value="">Todas las categorías</option>
+                    <option value="education" {% if category == 'education' %}selected{% endif %}>Educación</option>
+                    <option value="science" {% if category == 'science' %}selected{% endif %}>Ciencia y Tecnología</option>
+                    <option value="entertainment" {% if category == 'entertainment' %}selected{% endif %}>Entretenimiento</option>
+                    <option value="music" {% if category == 'music' %}selected{% endif %}>Música</option>
+                    <option value="gaming" {% if category == 'gaming' %}selected{% endif %}>Gaming</option>
+                    <option value="sports" {% if category == 'sports' %}selected{% endif %}>Deportes</option>
+                </select>
+            </div>
+
+            <!-- Filtro por duración -->
+            <div class="input-group">
+                <label for="duration">Duración</label>
+                <select id="duration" name="duration">
+                    <option value="">Cualquier duración</option>
+                    <option value="short" {% if duration == 'short' %}selected{% endif %}>Corto (< 4 min)</option>
+                    <option value="medium" {% if duration == 'medium' %}selected{% endif %}>Medio (4-20 min)</option>
+                    <option value="long" {% if duration == 'long' %}selected{% endif %}>Largo (> 20 min)</option>
+                </select>
+            </div>
+
+            <!-- Filtro por fecha -->
+            <div class="input-group">
+                <label for="date_filter">Fecha de publicación</label>
+                <select id="date_filter" name="date_filter">
+                    <option value="">Cualquier fecha</option>
+                    <option value="hour" {% if date_filter == 'hour' %}selected{% endif %}>Última hora</option>
+                    <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Hoy</option>
+                    <option value="week" {% if date_filter == 'week' %}selected{% endif %}>Esta semana</option>
+                    <option value="month" {% if date_filter == 'month' %}selected{% endif %}>Este mes</option>
+                    <option value="year" {% if date_filter == 'year' %}selected{% endif %}>Este año</option>
+                </select>
+            </div>
+
+            <!-- Ordenamiento -->
+            <div class="input-group">
+                <label for="order">Ordenar por</label>
+                <select id="order" name="order">
+                    <option value="relevance" {% if order == 'relevance' %}selected{% endif %}>Relevancia</option>
+                    <option value="date" {% if order == 'date' %}selected{% endif %}>Fecha</option>
+                    <option value="viewCount" {% if order == 'viewCount' %}selected{% endif %}>Vistas</option>
+                    <option value="rating" {% if order == 'rating' %}selected{% endif %}>Valoración</option>
+                </select>
+            </div>
+
+            <!-- Número de resultados -->
+            <div class="input-group">
+                <label for="max_results">Resultados</label>
+                <select id="max_results" name="max_results">
+                    <option value="12" {% if max_results == '12' %}selected{% endif %}>12</option>
+                    <option value="24" {% if max_results == '24' %}selected{% endif %}>24</option>
+                    <option value="50" {% if max_results == '50' %}selected{% endif %}>50</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="search-actions">
+            <button type="submit" class="btn-primary">🔍 Buscar</button>
+            <a href="{{ url_for('search.advanced_search') }}" class="btn-secondary">🔄 Limpiar</a>
+        </div>
+    </form>
+
+    {% if searched %}
+        <div class="search-results-info">
+            <p>Se encontraron resultados para: <strong>{{ query or 'búsqueda avanzada' }}</strong></p>
+            {% if category %}<span class="filter-badge">Categoría: {{ category }}</span>{% endif %}
+            {% if duration %}<span class="filter-badge">Duración: {{ duration }}</span>{% endif %}
+            {% if date_filter %}<span class="filter-badge">Fecha: {{ date_filter }}</span>{% endif %}
+        </div>
+    {% endif %}
+
+    {% if videos %}
+        <div class="video-grid">
+        {% for video in videos %}
+            <div class="card video-card">
+                <a href="https://youtube.com/watch?v={{ video.id }}" target="_blank" class="video-thumbnail">
+                    <img src="{{ video.thumbnail }}" alt="{{ video.title }}" loading="lazy">
+                    <div class="video-overlay">
+                        <span class="play-icon">▶</span>
+                    </div>
+                </a>
+                <div class="video-info">
+                    <div class="video-header">
+                        <h3 class="video-title">{{ video.title[:60] }}{% if video.title|length > 60 %}...{% endif %}</h3>
+                        <button class="favorite-btn {% if video.id in favorite_ids %}active{% endif %}" 
+                                data-video-id="{{ video.id }}" 
+                                data-title="{{ video.title }}"
+                                data-channel="{{ video.channel }}"
+                                data-description="{{ video.description }}"
+                                data-thumbnail="{{ video.thumbnail }}">
+                            {% if video.id in favorite_ids %}★{% else %}☆{% endif %}
+                        </button>
+                    </div>
+                    <p class="video-channel">{{ video.channel }}</p>
+                    <p class="video-description">{{ video.description[:100] }}{% if video.description|length > 100 %}...{% endif %}</p>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    {% elif searched %}
+        <p class="no-results">No se encontraron resultados. Intenta con otros filtros.</p>
+    {% endif %}
+</div>
+
+<script>
+// Validación en frontend
+document.querySelector('.advanced-search-form').addEventListener('submit', function(e) {
+    const query = document.getElementById('q').value.trim();
+    
+    // Validar que al menos haya una palabra clave o categoría
+    if (!query && !document.getElementById('category').value) {
+        e.preventDefault();
+        alert('Por favor, ingresa al menos una palabra clave o selecciona una categoría');
+        return false;
+    }
+    
+    // Validar caracteres permitidos
+    const pattern = /^[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s\-]+$/;
+    if (query && !pattern.test(query)) {
+        e.preventDefault();
+        alert('Solo se permiten letras, números, espacios y guiones en la búsqueda');
+        return false;
+    }
+});
+
+// Script para favoritos
+document.querySelectorAll('.favorite-btn').forEach(btn => {
+    btn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const videoId = this.dataset.videoId;
+        const videoData = {
+            title: this.dataset.title,
+            channel: this.dataset.channel,
+            description: this.dataset.description,
+            thumbnail: this.dataset.thumbnail
+        };
+        
+        console.log('Toggle favorito para video:', videoId);
+        
+        try {
+            const response = await fetch(`/toggle-favorite/${videoId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(videoData)
+            });
+            
+            if (response.ok) {
+                this.classList.toggle('active');
+                const isActive = this.classList.contains('active');
+                this.textContent = isActive ? '★' : '☆';
+                this.title = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
+                
+                console.log(isActive ? 'Agregado a favoritos' : 'Eliminado de favoritos');
+            } else {
+                console.error('Error en la respuesta:', response.status);
+                alert('Error al actualizar favoritos');
+            }
+        } catch (error) {
+            console.error('Error al toggle favorito:', error);
+            alert('Error de conexión. Intenta de nuevo.');
+        }
+    });
+});
+</script>
+{% endblock %}

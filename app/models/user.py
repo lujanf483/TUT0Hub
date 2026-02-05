@@ -1,3 +1,7 @@
+# ==================================================
+# ARCHIVO: app/models/user.py
+# ==================================================
+
 from datetime import datetime
 from flask_login import UserMixin
 from app import db
@@ -11,13 +15,17 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relación con favoritos
     favorites = db.relationship('Favorite', backref='user', lazy=True, cascade='all, delete-orphan')
     
     def set_password(self, password):
+        """Hash de contraseña con bcrypt"""
         salt = bcrypt.gensalt()
         self.password_hash = bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
     
     def check_password(self, password):
+        """Verificar contraseña"""
         return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
 
 class Favorite(db.Model):

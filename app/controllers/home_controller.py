@@ -1,3 +1,7 @@
+# ==================================================
+# ARCHIVO: app/controllers/home_controller.py
+# ==================================================
+
 from flask import Blueprint, render_template, redirect, url_for, jsonify, request
 from flask_login import login_required, current_user
 from app.services.youtube_service import search_videos, get_trending_videos
@@ -38,11 +42,18 @@ def favorites():
 @home_bp.route('/toggle-favorite/<video_id>', methods=['POST'])
 @login_required
 def toggle_favorite(video_id):
+    """
+    Agrega o elimina un video de favoritos
+    Recibe: video_id en URL y datos del video en JSON
+    Retorna: JSON con success: true
+    """
     existing = Favorite.query.filter_by(user_id=current_user.id, video_id=video_id).first()
     
     if existing:
+        # Si ya existe, eliminarlo
         db.session.delete(existing)
     else:
+        # Si no existe, agregarlo
         data = request.get_json()
         favorite = Favorite(
             user_id=current_user.id,

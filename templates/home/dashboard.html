@@ -25,7 +25,8 @@
                                 data-title="{{ video.title }}"
                                 data-channel="{{ video.channel }}"
                                 data-description="{{ video.description }}"
-                                data-thumbnail="{{ video.thumbnail }}">
+                                data-thumbnail="{{ video.thumbnail }}"
+                                title="{% if video.id in favorite_ids %}Quitar de favoritos{% else %}Agregar a favoritos{% endif %}">
                             {% if video.id in favorite_ids %}★{% else %}☆{% endif %}
                         </button>
                     </div>
@@ -36,38 +37,55 @@
         {% endfor %}
         </div>
     {% else %}
-        <p>No hay videos disponibles. {% if page_title == 'Búsqueda' %}Intenta con otra búsqueda.{% else %}Configura tu YouTube API Key.{% endif %}</p>
+        <p>No hay videos disponibles. {% if page_title == 'Búsqueda' %}Intenta con otra búsqueda.{% elif page_title == 'Favoritos' %}Aún no has agregado videos a favoritos.{% else %}Configura tu YouTube API Key.{% endif %}</p>
     {% endif %}
 </div>
 
 <script>
+// ============================================
+// SISTEMA DE FAVORITOS
+// ============================================
 document.querySelectorAll('.favorite-btn').forEach(btn => {
     btn.addEventListener('click', async function(e) {
         e.preventDefault();
+        e.stopPropagation();
+        
         const videoId = this.dataset.videoId;
         const videoData = {
-            id: videoId,
             title: this.dataset.title,
             channel: this.dataset.channel,
             description: this.dataset.description,
             thumbnail: this.dataset.thumbnail
         };
         
+        console.log('Toggle favorito para video:', videoId);
+        
         try {
             const response = await fetch(`/toggle-favorite/${videoId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify(videoData)
             });
             
             if (response.ok) {
+                // Cambiar el estado visual
                 this.classList.toggle('active');
-                this.textContent = this.classList.contains('active') ? '★' : '☆';
+                const isActive = this.classList.contains('active');
+                this.textContent = isActive ? '★' : '☆';
+                this.title = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
+                
+                // Mostrar mensaje
+                console.log(isActive ? 'Agregado a favoritos' : 'Eliminado de favoritos');
+            } else {
+                console.error('Error en la respuesta:', response.status);
+                alert('Error al actualizar favoritos');
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error al toggle favorito:', error);
+            alert('Error de conexión. Intenta de nuevo.');
         }
     });
 });
