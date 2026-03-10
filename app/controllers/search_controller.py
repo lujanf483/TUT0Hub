@@ -3,9 +3,9 @@
 # ACCIÓN: REEMPLAZAR TODO EL CONTENIDO
 # ==================================================
 
-from flask import Blueprint, render_template, request, flash
+from flask import Blueprint, render_template, request, flash, jsonify
 from flask_login import login_required, current_user
-from app.services.youtube_service import search_videos, advanced_search_videos
+from app.services.youtube_service import search_videos, advanced_search_videos, search_videos_paginated
 from app.models.user import Favorite
 import re
 
@@ -35,6 +35,47 @@ def search():
         favorite_ids = [fav.video_id for fav in current_user.favorites]
     
     return render_template('home/search.html', query=query, videos=videos, favorite_ids=favorite_ids, page_title='Búsqueda')
+
+@search_bp.route('/api/search', methods=['GET'])
+@login_required
+def api_search():
+    """Retorna resultados de búsqueda en JSON para infinite scroll"""
+    query = request.args.get('q', '').strip()
+    page_token = request.args.get('page_token', None, type=str)
+    per_page = request.args.get('per_page', 12, type=int)
+    
+    # Validar query
+    if not query or len(query) < 2:
+        return jsonify({'videos': [], 'nextPageToken': None, 'has_more': False, 'error': 'Query inválida'})
+    
+    if not re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s\-]+$', query):
+        return jsonify({'videos': [], 'nextPageToken': None, 'has_more': False, 'error': 'Caracteres no permitidos'})
+    
+    # Validar per_page
+    if per_page not in [12, 24, 50]:
+        per_page = 12
+    
+    # Buscar videos con paginación
+    result = search_videos_paginated(query, max_results=per_page, page_token=page_token)
+    
+    favorite_ids = [fav.video_id for fav in current_user.favorites]
+    
+    return jsonify({
+        'videos': [
+            {
+                'id': v['id'],
+                'title': v['title'],
+                'thumbnail': v['thumbnail'],
+                'channel': v['channel'],
+                'description': v['description']
+            }
+            for v in result['videos']
+        ],
+        'nextPageToken': result.get('nextPageToken'),
+        'prevPageToken': result.get('prevPageToken'),
+        'has_more': bool(result.get('nextPageToken')),
+        'favorite_ids': favorite_ids
+    })
 
 @search_bp.route('/advanced')
 @login_required

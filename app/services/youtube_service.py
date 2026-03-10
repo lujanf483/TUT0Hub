@@ -9,6 +9,9 @@ from datetime import datetime, timedelta
 
 YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3'
 
+# Cache para almacenar pageTokens de búsquedas (evita consultas repetidas)
+_search_tokens_cache = {}
+
 CATEGORY_MAP = {
     'education': '27',
     'science': '28',
@@ -55,6 +58,64 @@ def search_videos(query, max_results=12):
     except Exception as e:
         print(f"Error buscando videos: {e}")
         return []
+
+def search_videos_paginated(query, max_results=12, page_token=None):
+    """
+    Búsqueda de videos con paginación usando pageToken de YouTube
+    
+    Args:
+        query: término de búsqueda
+        max_results: cuántos resultados por página (máx 50)
+        page_token: token de la página anterior (para siguiente página)
+    
+    Returns:
+        dict con: videos[], nextPageToken, prevPageToken
+    """
+    api_key = current_app.config.get('YOUTUBE_API_KEY')
+    
+    if not api_key:
+        return {'videos': [], 'nextPageToken': None, 'prevPageToken': None}
+    
+    # Limitar max_results por política de YouTube
+    max_results = min(max_results, 50)
+    
+    try:
+        url = f'{YOUTUBE_API_BASE}/search'
+        params = {
+            'q': query,
+            'part': 'snippet',
+            'maxResults': max_results,
+            'type': 'video',
+            'key': api_key,
+            'order': 'relevance'
+        }
+        
+        if page_token:
+            params['pageToken'] = page_token
+        
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        
+        videos = []
+        for item in data.get('items', []):
+            video = {
+                'id': item['id']['videoId'],
+                'title': item['snippet']['title'],
+                'thumbnail': item['snippet']['thumbnails']['medium']['url'],
+                'channel': item['snippet']['channelTitle'],
+                'description': item['snippet']['description']
+            }
+            videos.append(video)
+        
+        return {
+            'videos': videos,
+            'nextPageToken': data.get('nextPageToken'),
+            'prevPageToken': data.get('prevPageToken')
+        }
+    except Exception as e:
+        print(f"Error en búsqueda paginada: {e}")
+        return {'videos': [], 'nextPageToken': None, 'prevPageToken': None}
 
 def advanced_search_videos(query='', category='', duration='', date_filter='', order='relevance', max_results=12):
     """Búsqueda avanzada de videos con filtros"""

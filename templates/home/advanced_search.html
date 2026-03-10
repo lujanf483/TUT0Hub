@@ -7,7 +7,7 @@
 {% block header %}{% include 'components/navbar.html' %}{% endblock %}
 {% block content %}
 <div class="dashboard-content">
-    <h1>🔍 Búsqueda Avanzada</h1>
+    <h1> Búsqueda Avanzada</h1>
     
     <form method="GET" action="{{ url_for('search.advanced_search') }}" class="advanced-search-form">
         <div class="search-grid">
@@ -84,7 +84,7 @@
         </div>
 
         <div class="search-actions">
-            <button type="submit" class="btn-primary">🔍 Buscar</button>
+            <button type="submit" class="btn-primary"> Buscar</button>
             <a href="{{ url_for('search.advanced_search') }}" class="btn-secondary">🔄 Limpiar</a>
         </div>
     </form>
@@ -152,7 +152,9 @@ document.querySelector('.advanced-search-form').addEventListener('submit', funct
     }
 });
 
-// Script para favoritos
+// ============================================
+// SISTEMA DE FAVORITOS
+// ============================================
 document.querySelectorAll('.favorite-btn').forEach(btn => {
     btn.addEventListener('click', async function(e) {
         e.preventDefault();
@@ -181,7 +183,7 @@ document.querySelectorAll('.favorite-btn').forEach(btn => {
             if (response.ok) {
                 this.classList.toggle('active');
                 const isActive = this.classList.contains('active');
-                this.textContent = isActive ? '★' : '☆';
+                this.textContent = isActive ? '\u2605' : '\u2606';
                 this.title = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
                 
                 console.log(isActive ? 'Agregado a favoritos' : 'Eliminado de favoritos');
@@ -191,8 +193,81 @@ document.querySelectorAll('.favorite-btn').forEach(btn => {
             }
         } catch (error) {
             console.error('Error al toggle favorito:', error);
-            alert('Error de conexión. Intenta de nuevo.');
+            alert('Error de conexion. Intenta de nuevo.');
         }
+    });
+});
+
+// ============================================
+// PREVIEW DE VIDEO AL HOVER
+// ============================================
+document.querySelectorAll('.video-card').forEach(card => {
+    const favBtn = card.querySelector('.favorite-btn');
+    if (!favBtn) return;
+    
+    // Crear tooltip
+    const tooltip = document.createElement('div');
+    tooltip.className = 'video-preview-tooltip';
+    tooltip.innerHTML = `
+        <div class="preview-thumbnail">
+            <img class="preview-img" src="" alt="" onerror="this.style.display='none'">
+            <div class="preview-play-icon">\u25b6</div>
+        </div>
+        <div class="preview-info">
+            <h3 class="preview-title"></h3>
+            <p class="preview-channel"></p>
+        </div>
+    `;
+    
+    // Insertar tooltip dentro de la tarjeta (antes del video-info)
+    card.querySelector('.video-thumbnail').parentNode.insertBefore(tooltip, card.querySelector('.video-info'));
+    
+    let showTimeout;
+    
+    // Actualizar contenido del tooltip
+    const updateTooltip = () => {
+        tooltip.querySelector('.preview-img').src = favBtn.dataset.thumbnail || '';
+        tooltip.querySelector('.preview-img').onerror = function() { this.style.display = 'none'; };
+        tooltip.querySelector('.preview-title').textContent = favBtn.dataset.title || 'Sin titulo';
+        tooltip.querySelector('.preview-channel').textContent = favBtn.dataset.channel || 'Canal desconocido';
+    };
+    
+    updateTooltip();
+    
+    // Mostrar preview con retraso
+    card.addEventListener('mouseenter', function() {
+        clearTimeout(showTimeout);
+        showTimeout = setTimeout(() => {
+            tooltip.classList.add('visible');
+            // Iniciar animación
+            const previewImg = tooltip.querySelector('.preview-img');
+            if (previewImg) previewImg.style.animationPlayState = 'running';
+        }, 250);
+    });
+    
+    // Ocultar preview
+    card.addEventListener('mouseleave', function() {
+        clearTimeout(showTimeout);
+        tooltip.classList.remove('visible');
+        // Pausar animación
+        const previewImg = tooltip.querySelector('.preview-img');
+        if (previewImg) previewImg.style.animationPlayState = 'paused';
+    });
+    
+    // Evitar que desaparezca si el mouse va al tooltip
+    tooltip.addEventListener('mouseenter', function() {
+        clearTimeout(showTimeout);
+        this.classList.add('visible');
+        // Iniciar animación
+        const previewImg = this.querySelector('.preview-img');
+        if (previewImg) previewImg.style.animationPlayState = 'running';
+    });
+    
+    tooltip.addEventListener('mouseleave', function() {
+        this.classList.remove('visible');
+        // Pausar animación
+        const previewImg = this.querySelector('.preview-img');
+        if (previewImg) previewImg.style.animationPlayState = 'paused';
     });
 });
 </script>

@@ -4,7 +4,7 @@
 
 from flask import Blueprint, render_template, redirect, url_for, jsonify, request
 from flask_login import login_required, current_user
-from app.services.youtube_service import search_videos, get_trending_videos
+from app.services.youtube_service import search_videos, get_trending_videos, search_videos_paginated
 from app import db
 from app.models.user import Favorite
 
@@ -22,6 +22,39 @@ def dashboard():
     videos = get_trending_videos(max_results=12)
     favorite_ids = [fav.video_id for fav in current_user.favorites]
     return render_template('home/dashboard.html', videos=videos, favorite_ids=favorite_ids, page_title='Dashboard')
+
+@home_bp.route('/api/videos', methods=['GET'])
+@login_required
+def api_videos():
+    """Retorna videos en JSON para infinite scroll con paginación real"""
+    per_page = request.args.get('per_page', 12, type=int)
+    page_token = request.args.get('page_token', None, type=str)
+    
+    # Validar per_page
+    if per_page not in [12, 24, 50]:
+        per_page = 12
+    
+    # Buscar usand paginación de YouTube
+    result = search_videos_paginated('tutorial', max_results=per_page, page_token=page_token)
+    
+    favorite_ids = [fav.video_id for fav in current_user.favorites]
+    
+    return jsonify({
+        'videos': [
+            {
+                'id': v['id'],
+                'title': v['title'],
+                'thumbnail': v['thumbnail'],
+                'channel': v['channel'],
+                'description': v['description']
+            }
+            for v in result['videos']
+        ],
+        'nextPageToken': result.get('nextPageToken'),
+        'prevPageToken': result.get('prevPageToken'),
+        'has_more': bool(result.get('nextPageToken')),
+        'favorite_ids': favorite_ids
+    })
 
 @home_bp.route('/favorites')
 @login_required

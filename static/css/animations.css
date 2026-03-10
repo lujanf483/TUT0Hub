@@ -1,0 +1,381 @@
+/* ============================================================
+   animations.css — Sistema de animaciones de TUT0hub
+   fade-in, scroll animations, carousel, toast, parallax
+   ============================================================ */
+
+/* -------------------------------------------------------
+   1. Animaciones de scroll con IntersectionObserver
+   Elementos con [data-animate] esperan la clase .animated
+   ------------------------------------------------------- */
+
+[data-animate] {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+[data-animate].animated {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Variantes de dirección */
+[data-animate="from-left"] {
+    transform: translateX(-40px);
+}
+
+[data-animate="from-right"] {
+    transform: translateX(40px);
+}
+
+[data-animate="from-left"].animated,
+[data-animate="from-right"].animated {
+    transform: translateX(0);
+}
+
+[data-animate="zoom"] {
+    transform: scale(0.85);
+}
+
+[data-animate="zoom"].animated {
+    transform: scale(1);
+}
+
+/* -------------------------------------------------------
+   2. Animación escalonada de tarjetas de video
+   ------------------------------------------------------- */
+
+.fade-in-card {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInCard 0.45s ease forwards;
+}
+
+@keyframes fadeInCard {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* -------------------------------------------------------
+   3. Transiciones de visibilidad (sin display:none)
+   ------------------------------------------------------- */
+
+.slide-transition {
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+/* -------------------------------------------------------
+   4. Carrusel
+   ------------------------------------------------------- */
+
+.carousel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    user-select: none;
+}
+
+.carousel-track {
+    display: flex;
+    width: 100%;
+    /* transform se aplica desde carousel.js */
+    will-change: transform;
+}
+
+.carousel-slide {
+    flex: 0 0 100%;
+    min-width: 100%;
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+}
+
+/* Botones de control */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 10;
+    transition: background 0.2s ease, transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-btn:hover {
+    background: rgba(255, 183, 0, 0.85);
+    color: #000;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-prev { left: 12px; }
+.carousel-next { right: 12px; }
+
+/* Indicadores (puntos) */
+.carousel-indicators {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.carousel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    border: none;
+    cursor: pointer;
+    transition: background 0.25s ease, transform 0.25s ease;
+    padding: 0;
+}
+
+.carousel-dot.active {
+    background: #ffb700;
+    transform: scale(1.3);
+}
+
+/* -------------------------------------------------------
+   5. Toast / Notificaciones
+   ------------------------------------------------------- */
+
+#toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.toast {
+    background: #1e1e1e;
+    color: #fff;
+    padding: 14px 18px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    pointer-events: all;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    min-width: 260px;
+    max-width: 380px;
+}
+
+.toast.toast-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-success { border-left: 4px solid #4caf50; }
+.toast-danger  { border-left: 4px solid #f44336; }
+.toast-info    { border-left: 4px solid #2196f3; }
+.toast-warning { border-left: 4px solid #ff9800; }
+
+.toast-message { flex: 1; font-size: 0.95rem; }
+
+.toast-close {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.toast-close:hover { color: #fff; }
+
+/* -------------------------------------------------------
+   6. Loader / Spinner
+   ------------------------------------------------------- */
+
+.loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 16px;
+}
+
+.loader-spinner {
+    width: 44px;
+    height: 44px;
+    border: 4px solid #333;
+    border-top-color: #ffb700;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loader-text {
+    color: #aaa;
+    font-size: 0.95rem;
+}
+
+/* -------------------------------------------------------
+   7. Estado vacío y error
+   ------------------------------------------------------- */
+
+.empty-state,
+.error-message-box {
+    text-align: center;
+    padding: 48px 20px;
+    background: #1e1e1e;
+    border-radius: 12px;
+}
+
+.empty-icon,
+.error-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.empty-state p,
+.error-message-box p {
+    color: #aaa;
+    margin-bottom: 16px;
+}
+
+.btn-retry {
+    padding: 10px 24px;
+    background: #ffb700;
+    color: #000;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: background 0.2s;
+}
+
+.btn-retry:hover { background: #ffc933; }
+
+/* -------------------------------------------------------
+   8. Efecto magnético en botones (via JS)
+   ------------------------------------------------------- */
+
+.btn-primary,
+.btn-secondary {
+    transition: transform 0.4s ease, background 0.2s ease, box-shadow 0.2s ease;
+    will-change: transform;
+}
+
+/* -------------------------------------------------------
+   9. Pulse — notificación de nuevos datos
+   ------------------------------------------------------- */
+
+.pulse-update {
+    animation: pulse 0.5s ease;
+}
+
+@keyframes pulse {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.08); }
+    70%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
+}
+
+/* -------------------------------------------------------
+   10. Barra de actualización de contenido (polling)
+   ------------------------------------------------------- */
+
+.refresh-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9998;
+    background: #1a1a1a;
+    border-bottom: 3px solid #ffb700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    animation: slideDownBar 0.3s ease;
+}
+
+@keyframes slideDownBar {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+.btn-refresh {
+    padding: 6px 18px;
+    background: #ffb700;
+    color: #000;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.btn-refresh:hover { background: #ffc933; }
+
+.btn-dismiss {
+    background: none;
+    border: none;
+    color: #aaa;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 4px;
+    transition: color 0.2s;
+}
+
+.btn-dismiss:hover { color: #fff; }
+
+/* -------------------------------------------------------
+   11. Responsive
+   ------------------------------------------------------- */
+
+@media (max-width: 600px) {
+    #toast-container {
+        bottom: 16px;
+        right: 12px;
+        left: 12px;
+    }
+
+    .toast {
+        min-width: unset;
+        max-width: 100%;
+    }
+
+    .carousel-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 1.2rem;
+    }
+}

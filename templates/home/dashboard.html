@@ -89,5 +89,78 @@ document.querySelectorAll('.favorite-btn').forEach(btn => {
         }
     });
 });
+
+// ============================================
+// PREVIEW DE VIDEO AL HOVER
+// ============================================
+document.querySelectorAll('.video-card').forEach(card => {
+    const favBtn = card.querySelector('.favorite-btn');
+    if (!favBtn) return;
+    
+    // Crear tooltip
+    const tooltip = document.createElement('div');
+    tooltip.className = 'video-preview-tooltip';
+    tooltip.innerHTML = `
+        <div class="preview-thumbnail">
+            <img class="preview-img" src="" alt="" onerror="this.style.display='none'">
+            <div class="preview-play-icon">▶</div>
+        </div>
+        <div class="preview-info">
+            <h3 class="preview-title"></h3>
+            <p class="preview-channel"></p>
+        </div>
+    `;
+    
+    // Insertar tooltip dentro de la tarjeta (antes del video-info)
+    card.querySelector('.video-thumbnail').parentNode.insertBefore(tooltip, card.querySelector('.video-info'));
+    
+    let showTimeout;
+    
+    // Actualizar contenido del tooltip
+    const updateTooltip = () => {
+        tooltip.querySelector('.preview-img').src = favBtn.dataset.thumbnail || '';
+        tooltip.querySelector('.preview-img').onerror = function() { this.style.display = 'none'; };
+        tooltip.querySelector('.preview-title').textContent = favBtn.dataset.title || 'Sin título';
+        tooltip.querySelector('.preview-channel').textContent = favBtn.dataset.channel || 'Canal desconocido';
+    };
+    
+    updateTooltip();
+    
+    // Mostrar preview con retraso
+    card.addEventListener('mouseenter', function() {
+        clearTimeout(showTimeout);
+        showTimeout = setTimeout(() => {
+            tooltip.classList.add('visible');
+            // Iniciar animación
+            const previewImg = tooltip.querySelector('.preview-img');
+            if (previewImg) previewImg.style.animationPlayState = 'running';
+        }, 250);
+    });
+    
+    // Ocultar preview
+    card.addEventListener('mouseleave', function() {
+        clearTimeout(showTimeout);
+        tooltip.classList.remove('visible');
+        // Pausar animación
+        const previewImg = tooltip.querySelector('.preview-img');
+        if (previewImg) previewImg.style.animationPlayState = 'paused';
+    });
+    
+    // Evitar que desaparezca si el mouse va al tooltip
+    tooltip.addEventListener('mouseenter', function() {
+        clearTimeout(showTimeout);
+        this.classList.add('visible');
+        // Iniciar animación
+        const previewImg = this.querySelector('.preview-img');
+        if (previewImg) previewImg.style.animationPlayState = 'running';
+    });
+    
+    tooltip.addEventListener('mouseleave', function() {
+        this.classList.remove('visible');
+        // Pausar animación
+        const previewImg = this.querySelector('.preview-img');
+        if (previewImg) previewImg.style.animationPlayState = 'paused';
+    });
+});
 </script>
 {% endblock %}
