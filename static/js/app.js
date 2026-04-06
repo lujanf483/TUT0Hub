@@ -1,6 +1,5 @@
 // ============================================================
 // app.js — Orquestador principal de TUT0hub
-// Inicializa módulos, maneja favoritos, polling, buscador
 // ============================================================
 
 import { debounce, toggleFavorite, loadMoreVideos, loadMoreSearchResults } from './api.js';
@@ -23,8 +22,7 @@ import { Carousel } from './carousel.js';
 import { initPreferences } from './preferences.js';
 import { translatePage, cacheOriginalTexts } from './i18n.js';
 
-// ⭐ EXPONER AL SCOPE GLOBAL INMEDIATAMENTE
-// Esto asegura que window.translatePage esté disponible cuando preferences.js lo necesite
+// Exponer al scope global para que preferences.js pueda llamarlas
 window.translatePage = translatePage;
 window.cacheOriginalTexts = cacheOriginalTexts;
 
@@ -40,30 +38,23 @@ const infiniteScrollState = {
 };
 
 // -------------------------------------------------------
-// Inicialización principal
+// Inicializacion principal
 // -------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('[App] 🚀 DOMContentLoaded - Inicializando...');
-    
-    // ⭐ PRIMERO: Cachear los textos originales de la página
-    console.log('[App] 📦 Almacenando textos originales...');
+    console.log('[App] DOMContentLoaded - Inicializando...');
+
+    // 1. Cachear textos originales antes de cualquier traduccion
     if (window.cacheOriginalTexts) {
         window.cacheOriginalTexts();
-    } else {
-        console.warn('[App] ⚠️ window.cacheOriginalTexts no está disponible');
     }
-    
-    // ⭐ SEGUNDO: Aplicar traducción global al idioma guardado
-    console.log('[App] 🌐 Aplicando idioma guardado...');
+
+    // 2. Aplicar idioma guardado
     if (window.translatePage) {
-        window.translatePage(); // Usa el idioma del data-language attribute
-    } else {
-        console.warn('[App] ⚠️ window.translatePage no está disponible aún');
+        window.translatePage();
     }
-    
-    // Inicializar módulos de UI
-    console.log('[App] 🎨 Inicializando UI modules...');
+
+    // 3. Inicializar modulos de UI
     initScrollAnimations();
     initMagneticButtons();
     initFavorites();
@@ -71,22 +62,18 @@ document.addEventListener('DOMContentLoaded', () => {
     initCarousels();
     initPolling();
     initInfiniteScroll();
-    
-    // ⭐ Inicializar preferencias (para que el formulario sea interactivo)
-    console.log('[App] ⚙️ Inicializando preferences...');
-    initPreferences();
-    
-    console.log('[App] ✅ Inicialización completada');
-});
 
-    // Animación escalonada de tarjetas ya presentes en el DOM
+    // 4. Preferencias (formulario interactivo en perfil)
+    initPreferences();
+
+    // 5. Animacion escalonada de tarjetas ya presentes en el DOM
     animateCards('.video-card');
 
-    console.log('[TUT0hub] App inicializada ✅');
+    console.log('[App] Inicializacion completada');
 });
 
 // -------------------------------------------------------
-// Sistema de favoritos (sin recargar página)
+// Sistema de favoritos
 // -------------------------------------------------------
 
 function initFavorites() {
@@ -105,7 +92,6 @@ function initFavorites() {
             thumbnail: btn.dataset.thumbnail
         };
 
-        // Estado optimista: actualizar UI inmediatamente
         const wasActive = btn.classList.contains('active');
         updateFavoriteButton(btn, !wasActive);
 
@@ -113,12 +99,11 @@ function initFavorites() {
 
         if (ok) {
             showToast(
-                wasActive ? '⭐ Eliminado de favoritos' : '★ Agregado a favoritos',
+                wasActive ? 'Eliminado de favoritos' : 'Agregado a favoritos',
                 wasActive ? 'info' : 'success'
             );
             pulseElement(btn);
         } else {
-            // Revertir si falló
             updateFavoriteButton(btn, wasActive);
             showToast('Error al actualizar favoritos', 'danger');
         }
@@ -133,20 +118,12 @@ function initSearchDebounce() {
     const searchInput = document.querySelector('.header input[name="q"]');
     if (!searchInput) return;
 
-    // Muestra indicador visual mientras el usuario escribe
     const debouncedHint = debounce((value) => {
-        if (value.length > 1) {
-            searchInput.style.borderColor = '#ffb700';
-        } else {
-            searchInput.style.borderColor = '';
-        }
+        searchInput.style.borderColor = value.length > 1 ? '#ffb700' : '';
     }, 300);
 
-    searchInput.addEventListener('input', (e) => {
-        debouncedHint(e.target.value);
-    });
+    searchInput.addEventListener('input', (e) => debouncedHint(e.target.value));
 
-    // Cancelar petición previa al escribir (AbortController está en api.js)
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             searchInput.value = '';
@@ -157,7 +134,7 @@ function initSearchDebounce() {
 }
 
 // -------------------------------------------------------
-// Carruseles (si existen en la página)
+// Carruseles
 // -------------------------------------------------------
 
 function initCarousels() {
@@ -171,104 +148,71 @@ function initCarousels() {
 }
 
 // -------------------------------------------------------
-// Polling inteligente — Reto final
-// Simula actualización en tiempo real sin WebSocket
+// Polling — actualizacion silenciosa cada 30s
 // -------------------------------------------------------
 
-const POLL_INTERVAL_MS = 30_000; // 30 segundos
+const POLL_INTERVAL_MS = 30_000;
 let pollTimer = null;
-let lastKnownCount = null;
 const seenIds = new Set();
 
-/**
- * Inicia el polling solo en el dashboard
- */
 function initPolling() {
-    // Solo activar en el dashboard principal
     if (!document.querySelector('.video-grid')) return;
 
-    // Registrar IDs actuales para prevenir duplicados
     document.querySelectorAll('[data-video-id]').forEach(el => {
         seenIds.add(el.dataset.videoId);
     });
-    lastKnownCount = seenIds.size;
 
     poll();
 }
 
 async function poll() {
     try {
-        // Hacemos una petición silenciosa al endpoint de trending
-        // para verificar si hay contenido nuevo
         const response = await fetch('/dashboard', {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
-
         if (!response.ok) throw new Error('Poll failed');
 
-        // Parsear respuesta (el backend devuelve HTML)
         const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-
-        const newCards = doc.querySelectorAll('[data-video-id]');
+        const doc = new DOMParser().parseFromString(html, 'text/html');
         let newCount = 0;
 
-        newCards.forEach(card => {
+        doc.querySelectorAll('[data-video-id]').forEach(card => {
             if (!seenIds.has(card.dataset.videoId)) {
                 newCount++;
                 seenIds.add(card.dataset.videoId);
             }
         });
 
-        if (newCount > 0) {
-            notifyNewContent(newCount);
-        }
+        if (newCount > 0) notifyNewContent(newCount);
 
-    } catch (err) {
-        // Silencioso: el polling no debe interrumpir la UX
+    } catch {
         console.log('[Polling] Sin actualizaciones');
     } finally {
-        // Programar próxima verificación con control de frecuencia
         pollTimer = setTimeout(poll, POLL_INTERVAL_MS);
     }
 }
 
-/**
- * Notificación visual cuando llegan nuevos datos
- * @param {number} count
- */
 function notifyNewContent(count) {
-    // Toast de notificación
     const msg = count === 1
-        ? '🔔 Hay 1 video nuevo disponible'
-        : `🔔 Hay ${count} videos nuevos disponibles`;
+        ? 'Hay 1 video nuevo disponible'
+        : `Hay ${count} videos nuevos disponibles`;
 
     showToast(msg, 'info', 6000);
 
-    // Pulsar el título de la sección
     const heading = document.querySelector('.dashboard-content h1');
     if (heading) pulseElement(heading);
 
-    // Botón para recargar si el usuario quiere ver el contenido nuevo
-    const refreshBar = document.createElement('div');
-    refreshBar.className = 'refresh-bar';
-    refreshBar.innerHTML = `
+    const bar = document.createElement('div');
+    bar.className = 'refresh-bar';
+    bar.innerHTML = `
         <span>${msg}</span>
-        <button onclick="location.reload()" class="btn-refresh">
-            Actualizar
-        </button>
-        <button onclick="this.parentElement.remove()" class="btn-dismiss">×</button>
+        <button onclick="location.reload()" class="btn-refresh">Actualizar</button>
+        <button onclick="this.parentElement.remove()" class="btn-dismiss">x</button>
     `;
-    document.body.prepend(refreshBar);
-
-    // Auto-ocultar la barra después de 10s
-    setTimeout(() => refreshBar.remove(), 10_000);
+    document.body.prepend(bar);
+    setTimeout(() => bar.remove(), 10_000);
 }
 
-/**
- * Detiene el polling (ej: al cambiar de página)
- */
 export function stopPolling() {
     if (pollTimer) {
         clearTimeout(pollTimer);
@@ -277,32 +221,23 @@ export function stopPolling() {
 }
 
 // -------------------------------------------------------
-// Infinite Scroll — Carga automática de más videos
+// Infinite Scroll
 // -------------------------------------------------------
 
-/**
- * Inicializa el sistema de infinite scroll
- * Detecta cuando el usuario está cerca del final de la página
- */
 function initInfiniteScroll() {
-    // Solo si hay un grid de videos
     const grid = document.querySelector('.video-grid');
     if (!grid) return;
 
-    // Detectar si estamos en búsqueda
     const searchInput = document.querySelector('.header input[name="q"]');
     if (searchInput && searchInput.value) {
         infiniteScrollState.isSearchResults = true;
         infiniteScrollState.searchQuery = searchInput.value;
     }
 
-    // Crear elemento centinela al final del grid
     const sentinel = document.createElement('div');
     sentinel.className = 'infinite-scroll-sentinel';
-    sentinel.style.height = '100px';
     grid.parentElement.appendChild(sentinel);
 
-    // IntersectionObserver: se dispara cuando el centinela entra en viewport
     const observer = new IntersectionObserver(
         (entries) => {
             entries.forEach((entry) => {
@@ -311,18 +246,13 @@ function initInfiniteScroll() {
                 }
             });
         },
-        {
-            rootMargin: '200px' // Empezar a cargar 200px antes de llegar al final
-        }
+        { rootMargin: '200px' }
     );
 
     observer.observe(sentinel);
-    console.log('[Infinite Scroll] Inicializado ✅');
+    console.log('[Infinite Scroll] Inicializado');
 }
 
-/**
- * Carga el siguiente lote de videos
- */
 async function loadMoreVideosHandler() {
     if (infiniteScrollState.isLoading || !infiniteScrollState.hasMore) return;
 
@@ -330,54 +260,45 @@ async function loadMoreVideosHandler() {
 
     const loadingBar = document.createElement('div');
     loadingBar.className = 'loading-bar';
-    loadingBar.innerHTML = '<div class="spinner"></div><p>Cargando más videos...</p>';
+    loadingBar.innerHTML = '<div class="spinner"></div><p>Cargando mas videos...</p>';
     document.querySelector('.video-grid').parentElement.appendChild(loadingBar);
 
     try {
         let data;
 
         if (infiniteScrollState.isSearchResults) {
-            // Cargar resultados de búsqueda
             data = await loadMoreSearchResults(
                 infiniteScrollState.searchQuery,
                 infiniteScrollState.nextPageToken
             );
         } else {
-            // Cargar videos del dashboard (trending)
-            const url = infiniteScrollState.nextPageToken 
+            const url = infiniteScrollState.nextPageToken
                 ? `/api/videos?per_page=12&page_token=${encodeURIComponent(infiniteScrollState.nextPageToken)}`
                 : '/api/videos?per_page=12';
-            
+
             const response = await fetch(url);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
             data = await response.json();
         }
 
         if (data.videos && data.videos.length > 0) {
-            // Agregar videos al grid
             appendVideosToGrid(data.videos, data.favorite_ids || []);
-
-            // Reinicializar las animaciones para los nuevos videos
             animateCards('[data-animated="false"]');
-            
-            // Marcar como animados
             document.querySelectorAll('[data-animated="false"]').forEach(el => {
                 el.setAttribute('data-animated', 'true');
             });
 
-            // Actualizar estado
             infiniteScrollState.nextPageToken = data.nextPageToken || null;
             infiniteScrollState.hasMore = data.has_more || false;
 
-            showToast(`✅ Cargados ${data.videos.length} videos`, 'success', 2000);
-            console.log('[loadMoreVideos] Token siguiente:', infiniteScrollState.nextPageToken, '- Más disponibles:', infiniteScrollState.hasMore);
+            showToast(`Cargados ${data.videos.length} videos`, 'success', 2000);
         } else {
             infiniteScrollState.hasMore = false;
-            showToast('📺 No hay más videos disponibles', 'info', 3000);
+            showToast('No hay mas videos disponibles', 'info', 3000);
         }
     } catch (err) {
         console.error('[loadMoreVideos] Error:', err);
-        showToast('❌ Error al cargar más videos', 'danger', 3000);
+        showToast('Error al cargar mas videos', 'danger', 3000);
     } finally {
         infiniteScrollState.isLoading = false;
         loadingBar.remove();

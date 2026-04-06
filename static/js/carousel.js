@@ -1,13 +1,5 @@
-// ============================================================
-// carousel.js — Carrusel avanzado sin librerías externas
-// Autoplay, controles, indicadores, loop infinito, touch
-// ============================================================
 
 export class Carousel {
-    /**
-     * @param {HTMLElement|string} container - elemento o selector CSS
-     * @param {object} options
-     */
     constructor(container, options = {}) {
         this.container = typeof container === 'string'
             ? document.querySelector(container)
@@ -35,10 +27,6 @@ export class Carousel {
         this._init();
     }
 
-    // -------------------------------------------------------
-    // Inicialización
-    // -------------------------------------------------------
-
     _init() {
         this.track = this.container.querySelector('.carousel-track');
         this.slides = Array.from(this.container.querySelectorAll('.carousel-slide'));
@@ -59,19 +47,15 @@ export class Carousel {
         }
     }
 
-    // -------------------------------------------------------
-    // Controles de navegación (anterior / siguiente)
-    // -------------------------------------------------------
-
     _buildControls() {
         const prev = document.createElement('button');
         prev.className = 'carousel-btn carousel-prev';
-        prev.innerHTML = '‹';
+        prev.innerHTML = '&#8249;';
         prev.setAttribute('aria-label', 'Anterior');
 
         const next = document.createElement('button');
         next.className = 'carousel-btn carousel-next';
-        next.innerHTML = '›';
+        next.innerHTML = '&#8250;';
         next.setAttribute('aria-label', 'Siguiente');
 
         this.container.appendChild(prev);
@@ -89,10 +73,6 @@ export class Carousel {
             if (this.options.autoplay) this._startAutoplay();
         });
     }
-
-    // -------------------------------------------------------
-    // Indicadores de posición (puntos)
-    // -------------------------------------------------------
 
     _buildIndicators() {
         const dotsContainer = document.createElement('div');
@@ -114,10 +94,6 @@ export class Carousel {
         this.container.appendChild(dotsContainer);
     }
 
-    // -------------------------------------------------------
-    // Navegación
-    // -------------------------------------------------------
-
     next() {
         if (this.isAnimating) return;
         const nextIndex = this.options.loop
@@ -134,17 +110,11 @@ export class Carousel {
         this._goTo(prevIndex);
     }
 
-    /**
-     * Navega a un slide específico usando transform + translateX
-     * @param {number} index
-     * @param {boolean} animate
-     */
     _goTo(index, animate = true) {
         if (index < 0 || index >= this.total) return;
         this.isAnimating = animate;
 
         const offset = -index * 100;
-
         this.track.style.transition = animate
             ? `transform ${this.options.transitionDuration}ms ease`
             : 'none';
@@ -154,9 +124,7 @@ export class Carousel {
         this._updateIndicators();
 
         if (animate) {
-            setTimeout(() => {
-                this.isAnimating = false;
-            }, this.options.transitionDuration);
+            setTimeout(() => { this.isAnimating = false; }, this.options.transitionDuration);
         }
     }
 
@@ -166,10 +134,6 @@ export class Carousel {
             dot.setAttribute('aria-current', i === this.currentIndex ? 'true' : 'false');
         });
     }
-
-    // -------------------------------------------------------
-    // Autoplay
-    // -------------------------------------------------------
 
     _startAutoplay() {
         this._stopAutoplay();
@@ -183,12 +147,7 @@ export class Carousel {
         }
     }
 
-    // -------------------------------------------------------
-    // Soporte táctil (touch events) y mouse drag
-    // -------------------------------------------------------
-
     _bindEvents() {
-        // Touch
         this.container.addEventListener('touchstart', (e) => {
             this.startX = e.touches[0].clientX;
             this.isDragging = true;
@@ -198,8 +157,7 @@ export class Carousel {
         this.container.addEventListener('touchmove', (e) => {
             if (!this.isDragging) return;
             const diff = this.startX - e.touches[0].clientX;
-            const threshold = 50;
-            if (Math.abs(diff) > threshold) {
+            if (Math.abs(diff) > 50) {
                 this.isDragging = false;
                 diff > 0 ? this.next() : this.prev();
                 if (this.options.autoplay) this._startAutoplay();
@@ -211,7 +169,6 @@ export class Carousel {
             if (this.options.autoplay) this._startAutoplay();
         });
 
-        // Mouse drag
         this.container.addEventListener('mousedown', (e) => {
             this.startX = e.clientX;
             this.isDragging = true;
@@ -228,22 +185,16 @@ export class Carousel {
             if (this.options.autoplay) this._startAutoplay();
         });
 
-        // Pausar en hover
         this.container.addEventListener('mouseenter', () => this._stopAutoplay());
         this.container.addEventListener('mouseleave', () => {
             if (this.options.autoplay) this._startAutoplay();
         });
 
-        // Teclado
         this.container.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight') this.next();
             if (e.key === 'ArrowLeft') this.prev();
         });
     }
-
-    // -------------------------------------------------------
-    // API pública
-    // -------------------------------------------------------
 
     destroy() {
         this._stopAutoplay();

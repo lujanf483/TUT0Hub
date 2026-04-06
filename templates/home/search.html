@@ -1,2 +1,73 @@
-{% extends "home/dashboard.html" %}
-<div class="dashboard-content" data-animate></div>
+{% extends "base.html" %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+{% block body_class %}page-dashboard{% endblock %}
+{% block header %}{% include 'components/navbar.html' %}{% endblock %}
+{% block content %}
+<div class="dashboard-content">
+    <h1>
+        {% if query %}
+            Resultados para: "{{ query }}"
+        {% else %}
+            Buscar Videos
+        {% endif %}
+    </h1>
+
+    {% if videos %}
+        <p style="color:#aaa; margin-bottom:20px;">
+            {{ videos|length }} resultado(s) encontrado(s)
+        </p>
+        <div class="video-grid">
+        {% for video in videos %}
+            <div class="card video-card">
+                <a href="https://youtube.com/watch?v={{ video.id }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="video-thumbnail">
+                    <img src="{{ video.thumbnail }}" alt="{{ video.title }}" loading="lazy">
+                    <div class="video-overlay">
+                        <span class="play-icon">&#9654;</span>
+                    </div>
+                </a>
+                <div class="video-info">
+                    <div class="video-header">
+                        <h3 class="video-title">
+                            {{ video.title[:60] }}{% if video.title|length > 60 %}...{% endif %}
+                        </h3>
+                        <button class="favorite-btn {% if video.id in favorite_ids %}active{% endif %}"
+                                data-video-id="{{ video.id }}"
+                                data-title="{{ video.title }}"
+                                data-channel="{{ video.channel }}"
+                                data-description="{{ video.description }}"
+                                data-thumbnail="{{ video.thumbnail }}"
+                                title="{% if video.id in favorite_ids %}Quitar de favoritos{% else %}Agregar a favoritos{% endif %}">
+                            {% if video.id in favorite_ids %}&#9733;{% else %}&#9734;{% endif %}
+                        </button>
+                    </div>
+                    <p class="video-channel">{{ video.channel }}</p>
+                    <p class="video-description">
+                        {{ video.description[:100] }}{% if video.description|length > 100 %}...{% endif %}
+                    </p>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+
+    {% elif query %}
+        <div style="text-align:center; padding:60px 20px; background:#1e1e1e; border-radius:12px;">
+            <p style="color:#aaa; font-size:1.1rem;">
+                No se encontraron resultados para "<strong style="color:#fff;">{{ query }}</strong>".
+            </p>
+            <p style="color:#666; margin-top:8px;">Intenta con otras palabras clave.</p>
+        </div>
+
+    {% else %}
+        <div style="text-align:center; padding:60px 20px; background:#1e1e1e; border-radius:12px;">
+            <p style="color:#aaa; font-size:1.1rem;">
+                Escribe algo en el buscador para encontrar videos.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
