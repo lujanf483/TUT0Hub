@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from flask_login import login_required, current_user
-from app import db
 from app.models.user import UserSession
 from app.utils.mfa_utils import generate_otp_code, otp_expiry, is_otp_valid
 from app.utils.email_utils import send_mfa_code
@@ -13,9 +12,7 @@ profile_bp = Blueprint('profile', __name__, url_prefix='/profile')
 @profile_bp.route('/')
 @login_required
 def index():
-    sessions = UserSession.query.filter_by(
-        user_id=current_user.id, is_active=True
-    ).order_by(UserSession.last_active.desc()).all()
+    sessions = UserSession.get_active_by_user(current_user.id)
     return render_template('profile/index.html', sessions=sessions, page_title='Mi Perfil')
 
 
@@ -41,7 +38,6 @@ def change_password():
 
     current_user.set_password(new_pass)
     revoke_all_user_tokens(current_user.id)
-    db.session.commit()
     flash('Contrasena actualizada. Vuelve a iniciar sesion por seguridad.', 'success')
     return redirect(url_for('auth.logout'))
 
@@ -54,7 +50,6 @@ def toggle_mfa():
         code = generate_otp_code()
         current_user.mfa_code = code
         current_user.mfa_code_expiry = otp_expiry(10)
-        db.session.commit()
         send_mfa_code(current_user.email, code)
         session['mfa_setup_pending'] = True
         flash('Se envio un codigo a tu correo para confirmar la activacion', 'info')
@@ -63,7 +58,6 @@ def toggle_mfa():
         current_user.mfa_enabled = False
         current_user.mfa_code = None
         current_user.mfa_secret = None
-        db.session.commit()
         flash('MFA desactivado', 'info')
     return redirect(url_for('profile.index'))
 
@@ -80,7 +74,6 @@ def confirm_mfa():
             current_user.mfa_enabled = True
             current_user.mfa_code = None
             current_user.mfa_code_expiry = None
-            db.session.commit()
             session.pop('mfa_setup_pending', None)
             flash('MFA activado exitosamente', 'success')
         else:
@@ -90,13 +83,12 @@ def confirm_mfa():
     return render_template('profile/confirm_mfa.html')
 
 
-@profile_bp.route('/sessions/close/<int:session_id>', methods=['POST'])
+@profile_bp.route('/sessions/close/<session_id>', methods=['POST'])
 @login_required
 def close_session(session_id):
-    s = UserSession.query.filter_by(id=session_id, user_id=current_user.id).first()
-    if s:
+    s = UserSession.get_by_id(session_id)
+    if s and s.user_id == current_user.id:
         s.is_active = False
-        db.session.commit()
         flash('Sesion cerrada', 'success')
     return redirect(url_for('profile.index'))
 
@@ -104,9 +96,8 @@ def close_session(session_id):
 @profile_bp.route('/sessions/close-all', methods=['POST'])
 @login_required
 def close_all_sessions():
-    UserSession.query.filter_by(user_id=current_user.id, is_active=True).update({'is_active': False})
+    UserSession.deactivate_all_for_user(current_user.id)
     revoke_all_user_tokens(current_user.id)
-    db.session.commit()
     flash('Todas las sesiones han sido cerradas', 'success')
     return redirect(url_for('auth.logout'))
 
@@ -120,7 +111,6 @@ def update_preferences():
         current_user.theme = theme
     if language in ('es', 'en'):
         current_user.language = language
-    db.session.commit()
     flash('Preferencias actualizadas', 'success')
     return redirect(url_for('profile.index'))
 
@@ -135,6 +125,5 @@ def update_secret_question():
         return redirect(url_for('profile.index'))
     current_user.secret_question = question
     current_user.set_secret_answer(answer)
-    db.session.commit()
     flash('Pregunta secreta actualizada', 'success')
     return redirect(url_for('profile.index'))

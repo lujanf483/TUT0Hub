@@ -1,7 +1,7 @@
 from flask import (Blueprint, render_template, request, redirect,
                    url_for, flash, session, jsonify)
 from flask_login import login_user, logout_user, current_user
-from app import db, limiter
+from app import limiter
 from app.models.user import User, UserSession, PasswordReset
 from app.utils.captcha import SimpleCaptcha, CaptchaStore
 from app.utils.jwt_utils import (generate_access_token, generate_refresh_token,
@@ -11,7 +11,6 @@ from app.utils.email_utils import (send_mfa_code, send_password_reset_email,
                                     send_sms_code, send_call_code_simulated)
 from app.utils.mfa_utils import generate_otp_code, otp_expiry, is_otp_valid
 from email_validator import validate_email, EmailNotValidError
-from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta
 import secrets
 import re
@@ -31,9 +30,9 @@ def _complete_login(user):
     session['session_db_token'] = db_session.session_token
 
 
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # LOGIN
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 @auth_bp.route('/login', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def login():
@@ -52,9 +51,7 @@ def login():
             flash('Credenciales invalidas', 'danger')
             return render_template('auth/login.html')
 
-        user = User.query.filter(
-            (User.username == username) | (User.email == username)
-        ).first()
+        user = User.get_by_username_or_email(username)
 
         if user and user.check_password(password) and user.is_active:
             if user.mfa_enabled:
@@ -63,7 +60,6 @@ def login():
                 code = generate_otp_code()
                 user.mfa_code = code
                 user.mfa_code_expiry = otp_expiry(minutes=10)
-                db.session.commit()
                 send_mfa_code(user.email, code)
                 flash('Se envio un codigo MFA a tu correo', 'info')
                 return redirect(url_for('auth.mfa_verify'))
@@ -76,15 +72,15 @@ def login():
     return render_template('auth/login.html')
 
 
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # MFA
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 @auth_bp.route('/mfa-verify', methods=['GET', 'POST'])
 def mfa_verify():
     if not session.get('mfa_pending'):
         return redirect(url_for('auth.login'))
 
-    user = User.query.get(session.get('mfa_user_id'))
+    user = User.get_by_id(session.get('mfa_user_id'))
     if not user:
         return redirect(url_for('auth.login'))
 
@@ -94,7 +90,6 @@ def mfa_verify():
         if is_otp_valid(code, user.mfa_code, user.mfa_code_expiry):
             user.mfa_code = None
             user.mfa_code_expiry = None
-            db.session.commit()
             session.pop('mfa_pending', None)
             session.pop('mfa_user_id', None)
             _complete_login(user)
@@ -116,20 +111,19 @@ def mfa_verify():
 
 @auth_bp.route('/mfa-resend', methods=['POST'])
 def mfa_resend():
-    user = User.query.get(session.get('mfa_user_id'))
+    user = User.get_by_id(session.get('mfa_user_id'))
     if user and session.get('mfa_pending'):
         code = generate_otp_code()
         user.mfa_code = code
         user.mfa_code_expiry = otp_expiry(minutes=10)
-        db.session.commit()
         send_mfa_code(user.email, code)
         flash('Codigo reenviado a tu correo', 'info')
     return redirect(url_for('auth.mfa_verify'))
 
 
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # REGISTRO
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -183,34 +177,27 @@ def register():
         return err('La contrasena no puede ser igual al usuario')
     if password != password_confirm:
         return err('Las contrasenas no coinciden')
-    if User.query.filter_by(username=username).first():
+    if User.get_by_username(username):
         return err('El usuario ya existe')
-    if User.query.filter_by(email=email).first():
+    if User.get_by_email(email):
         return err('El email ya esta registrado')
 
     try:
-        user = User(username=username, email=email)
-        user.set_password(password)
+        user = User.create(username=username, email=email, password=password)
         if secret_question and secret_answer:
             user.secret_question = secret_question
             user.set_secret_answer(secret_answer)
-        db.session.add(user)
-        db.session.commit()
         _complete_login(user)
         flash('Cuenta creada exitosamente! Bienvenido a TUT0hub', 'success')
         return redirect(url_for('home.dashboard'))
-    except IntegrityError:
-        db.session.rollback()
-        return err('Error: El usuario o email ya existe')
     except Exception as e:
-        db.session.rollback()
         print(f"Error de registro: {e}")
         return err('Error al crear la cuenta. Intenta de nuevo.')
 
 
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # LOGOUT
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 @auth_bp.route('/logout')
 def logout():
     if current_user.is_authenticated:
@@ -219,19 +206,18 @@ def logout():
             revoke_refresh_token(rt)
         st = session.get('session_db_token')
         if st:
-            s = UserSession.query.filter_by(session_token=st).first()
+            s = UserSession.get_by_token(st)
             if s:
                 s.is_active = False
-                db.session.commit()
     logout_user()
     session.clear()
     flash('Sesion cerrada', 'info')
     return redirect(url_for('auth.login'))
 
 
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # RECUPERACION DE CONTRASENA
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def forgot_password():
@@ -240,48 +226,38 @@ def forgot_password():
         method = request.form.get('method', 'email')
         success_msg = 'Si el correo existe, recibiras instrucciones en breve.'
 
-        user = User.query.filter_by(email=email).first()
+        user = User.get_by_email(email)
         if not user:
             flash(success_msg, 'info')
             return redirect(url_for('auth.forgot_password'))
 
-        PasswordReset.query.filter_by(user_id=user.id, used=False).update({'used': True})
-        db.session.commit()
+        PasswordReset.invalidate_pending_for_user(user.id)
 
         token = secrets.token_urlsafe(48)
         expiry = datetime.utcnow() + timedelta(minutes=30)
 
         if method in ('sms', 'call'):
             code = generate_otp_code()
-            pr = PasswordReset(user_id=user.id, token=token, method=method,
-                               code=code, expires_at=expiry)
-            db.session.add(pr)
-            db.session.commit()
+            PasswordReset.create(user.id, token, method, expiry, code=code)
             if method == 'sms':
                 send_sms_code(email, code)
             else:
                 send_call_code_simulated(email, code)
             session['reset_token'] = token
             session['reset_method'] = method
-            flash(f'Codigo enviado. Revisa tu correo (simulacion de {"SMS" if method == "sms" else "llamada"}).', 'info')
+            flash(f'Codigo enviado. Revisa tu correo (simulacion).', 'info')
             return redirect(url_for('auth.verify_reset_code'))
 
         elif method == 'question':
             if not user.secret_question:
                 flash('No tienes pregunta secreta configurada', 'danger')
                 return redirect(url_for('auth.forgot_password'))
-            pr = PasswordReset(user_id=user.id, token=token, method='question',
-                               expires_at=expiry)
-            db.session.add(pr)
-            db.session.commit()
+            PasswordReset.create(user.id, token, 'question', expiry)
             session['reset_token'] = token
             return redirect(url_for('auth.reset_by_question'))
 
         else:
-            pr = PasswordReset(user_id=user.id, token=token, method='email',
-                               expires_at=expiry)
-            db.session.add(pr)
-            db.session.commit()
+            PasswordReset.create(user.id, token, 'email', expiry)
             reset_link = url_for('auth.reset_password', token=token, _external=True)
             send_password_reset_email(email, reset_link)
 
@@ -297,7 +273,7 @@ def verify_reset_code():
     if not reset_token:
         return redirect(url_for('auth.forgot_password'))
 
-    pr = PasswordReset.query.filter_by(token=reset_token).first()
+    pr = PasswordReset.get_by_token(reset_token)
     if not pr or not pr.is_valid():
         flash('El codigo ha expirado o es invalido', 'danger')
         return redirect(url_for('auth.forgot_password'))
@@ -305,11 +281,9 @@ def verify_reset_code():
     if request.method == 'POST':
         code = request.form.get('code', '').strip()
         pr.attempts += 1
-        db.session.commit()
 
         if pr.attempts > 5:
             pr.used = True
-            db.session.commit()
             flash('Demasiados intentos. Solicita un nuevo codigo.', 'danger')
             return redirect(url_for('auth.forgot_password'))
 
@@ -327,21 +301,19 @@ def reset_by_question():
     if not reset_token:
         return redirect(url_for('auth.forgot_password'))
 
-    pr = PasswordReset.query.filter_by(token=reset_token, method='question').first()
+    pr = PasswordReset.get_by_token(reset_token)
     if not pr or not pr.is_valid():
         flash('Token invalido o expirado', 'danger')
         return redirect(url_for('auth.forgot_password'))
 
-    user = User.query.get(pr.user_id)
+    user = User.get_by_id(pr.user_id)
 
     if request.method == 'POST':
         answer = request.form.get('answer', '').strip()
         pr.attempts += 1
-        db.session.commit()
 
         if pr.attempts > 5:
             pr.used = True
-            db.session.commit()
             flash('Demasiados intentos', 'danger')
             return redirect(url_for('auth.forgot_password'))
 
@@ -355,12 +327,12 @@ def reset_by_question():
 
 @auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
-    pr = PasswordReset.query.filter_by(token=token).first()
+    pr = PasswordReset.get_by_token(token)
     if not pr or not pr.is_valid():
         flash('El enlace ha expirado o es invalido', 'danger')
         return redirect(url_for('auth.forgot_password'))
 
-    user = User.query.get(pr.user_id)
+    user = User.get_by_id(pr.user_id)
 
     if request.method == 'POST':
         new_password = request.form.get('password', '').strip()
@@ -379,7 +351,6 @@ def reset_password(token):
         user.set_password(new_password)
         pr.used = True
         revoke_all_user_tokens(user.id)
-        db.session.commit()
         session.pop('reset_token', None)
         flash('Contrasena restablecida exitosamente. Inicia sesion.', 'success')
         return redirect(url_for('auth.login'))
@@ -387,9 +358,9 @@ def reset_password(token):
     return render_template('auth/reset_password.html', token=token)
 
 
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # API JWT
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 @auth_bp.route('/api/refresh-token', methods=['POST'])
 def api_refresh_token():
     data = request.get_json()
@@ -403,9 +374,9 @@ def api_refresh_token():
     return jsonify({'access_token': new_access, 'refresh_token': new_refresh})
 
 
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 # SSO SIMULADO
-# ──────────────────────────────────────────────────────────
+# -------------------------------------------------------
 @auth_bp.route('/sso/token', methods=['GET'])
 def sso_get_token():
     if not current_user.is_authenticated:
@@ -423,7 +394,7 @@ def sso_verify():
     payload = validate_access_token(token)
     if not payload:
         return jsonify({'valid': False, 'error': 'Token invalido o expirado'}), 401
-    user = User.query.get(payload['user_id'])
+    user = User.get_by_id(payload['user_id'])
     if not user:
         return jsonify({'valid': False}), 404
     return jsonify({'valid': True, 'user_id': user.id, 'username': user.username, 'role': user.role})

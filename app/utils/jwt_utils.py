@@ -2,7 +2,6 @@ import jwt
 import secrets
 from datetime import datetime, timedelta
 from flask import current_app
-from app import db
 from app.models.user import RefreshToken
 
 
@@ -20,9 +19,7 @@ def generate_access_token(user_id, role):
 def generate_refresh_token(user_id):
     token = secrets.token_hex(64)
     expires_at = datetime.utcnow() + timedelta(days=7)
-    rt = RefreshToken(user_id=user_id, token=token, expires_at=expires_at)
-    db.session.add(rt)
-    db.session.commit()
+    RefreshToken.create(user_id, token, expires_at)
     return token
 
 
@@ -39,23 +36,20 @@ def validate_access_token(token):
 
 
 def refresh_access_token(refresh_token_str):
-    rt = RefreshToken.query.filter_by(token=refresh_token_str).first()
+    rt = RefreshToken.get_by_token(refresh_token_str)
     if not rt or not rt.is_valid():
         return None, None
-    rt.revoked = True
-    db.session.commit()
+    rt.revoke()
     new_access = generate_access_token(rt.user_id, rt.user.role)
     new_refresh = generate_refresh_token(rt.user_id)
     return new_access, new_refresh
 
 
 def revoke_refresh_token(token_str):
-    rt = RefreshToken.query.filter_by(token=token_str).first()
+    rt = RefreshToken.get_by_token(token_str)
     if rt:
-        rt.revoked = True
-        db.session.commit()
+        rt.revoke()
 
 
 def revoke_all_user_tokens(user_id):
-    RefreshToken.query.filter_by(user_id=user_id, revoked=False).update({'revoked': True})
-    db.session.commit()
+    RefreshToken.revoke_all_for_user(user_id)

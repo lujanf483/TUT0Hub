@@ -1,44 +1,72 @@
-import os, sys
+"""
+Script para inicializar la base de datos en MongoDB Atlas.
+Crea los indices y los usuarios de prueba (admin y editor).
+
+Uso:
+    python recreate_db.py
+"""
+
+import os
+import sys
 
 def main():
     project_dir = os.path.dirname(os.path.abspath(__file__))
-    db_path = os.path.join(project_dir, 'instance', 'tut0hub.db')
-
-    if os.path.exists(db_path):
-        os.remove(db_path)
-        print("Base de datos eliminada")
-
     os.chdir(project_dir)
     sys.path.insert(0, project_dir)
 
+    # Cargar variables de entorno desde .env
+    from dotenv import load_dotenv
+    load_dotenv()
+
     try:
-        from app import create_app, db
+        from app import create_app, get_db
         from app.models.user import User
 
         app = create_app()
+
         with app.app_context():
-            db.create_all()
-            print("Tablas creadas")
+            db = get_db()
 
-            if not User.query.filter_by(username='admin').first():
-                admin = User(username='admin', email='admin@tut0hub.com', role='admin')
-                admin.set_password('Admin123')
-                db.session.add(admin)
+            print("Conectado a MongoDB.")
+            print(f"Base de datos: {db.name}")
 
-                editor = User(username='editor', email='editor@tut0hub.com', role='editor')
-                editor.set_password('Editor123')
-                db.session.add(editor)
+            # Opcional: limpiar colecciones para empezar desde cero
+            respuesta = input("Deseas limpiar todas las colecciones? (s/N): ").strip().lower()
+            if respuesta == 's':
+                db.users.drop()
+                db.user_sessions.drop()
+                db.refresh_tokens.drop()
+                db.password_resets.drop()
+                db.favorites.drop()
+                print("Colecciones eliminadas.")
 
-                db.session.commit()
-                print("Usuarios de prueba creados:")
-                print("  admin / Admin123  (rol: admin)")
-                print("  editor / Editor123  (rol: editor)")
+            # Crear usuarios de prueba si no existen
+            if not User.get_by_username('admin'):
+                User.create(
+                    username='admin',
+                    email='admin@tut0hub.com',
+                    password='Admin123',
+                    role='admin'
+                )
+                print("Usuario admin creado: admin / Admin123")
 
-        return True
-    except Exception as e:
+            if not User.get_by_username('editor'):
+                User.create(
+                    username='editor',
+                    email='editor@tut0hub.com',
+                    password='Editor123',
+                    role='editor'
+                )
+                print("Usuario editor creado: editor / Editor123")
+
+            print("Base de datos lista.")
+            return True
+
+    except Exception:
         import traceback
         traceback.print_exc()
         return False
+
 
 if __name__ == '__main__':
     sys.exit(0 if main() else 1)
