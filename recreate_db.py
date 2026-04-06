@@ -1,43 +1,44 @@
-#!/usr/bin/env python3
-"""Script para recrear la base de datos con el nuevo esquema"""
-
-import os
-import sys
+import os, sys
 
 def main():
-    db_path = r"C:\Users\lujan\Downloads\Desarrollo Pagina\TUT0hub_clean\instance\tut0hub.db"
-    
-    # Eliminar BD antigua
-    try:
-        if os.path.exists(db_path):
-            os.remove(db_path)
-            print(f"✅ Base de datos eliminada: {db_path}")
-        else:
-            print(f"ℹ️ Base de datos no existe")
-    except Exception as e:
-        print(f"❌ Error al eliminar BD: {e}")
-        return False
-    
-    # Cambiar directorio
-    os.chdir(r"C:\Users\lujan\Downloads\Desarrollo Pagina\TUT0hub_clean")
-    sys.path.insert(0, os.getcwd())
-    
-    # Importar y recrear
+    project_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(project_dir, 'instance', 'tut0hub.db')
+
+    if os.path.exists(db_path):
+        os.remove(db_path)
+        print("Base de datos eliminada")
+
+    os.chdir(project_dir)
+    sys.path.insert(0, project_dir)
+
     try:
         from app import create_app, db
-        
+        from app.models.user import User
+
         app = create_app()
         with app.app_context():
             db.create_all()
-            print("✅ Base de datos recreada con las nuevas columnas")
-            print("✅ Listo para registrarse de nuevo")
-            return True
+            print("Tablas creadas")
+
+            if not User.query.filter_by(username='admin').first():
+                admin = User(username='admin', email='admin@tut0hub.com', role='admin')
+                admin.set_password('Admin123')
+                db.session.add(admin)
+
+                editor = User(username='editor', email='editor@tut0hub.com', role='editor')
+                editor.set_password('Editor123')
+                db.session.add(editor)
+
+                db.session.commit()
+                print("Usuarios de prueba creados:")
+                print("  admin / Admin123  (rol: admin)")
+                print("  editor / Editor123  (rol: editor)")
+
+        return True
     except Exception as e:
-        print(f"❌ Error al recrear BD: {e}")
         import traceback
         traceback.print_exc()
         return False
 
 if __name__ == '__main__':
-    success = main()
-    sys.exit(0 if success else 1)
+    sys.exit(0 if main() else 1)

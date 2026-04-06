@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Acceso Denegado | TUT0hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}">
+</head>
+<body class="error-page">
+    <div class="error-container">
+        <div class="error-code">403</div>
+        <h1>Acceso Denegado</h1>
+        <p class="error-message">
+            No tienes permiso para acceder a esta pagina.
+        </p>
+        <p class="error-suggestion">
+            Tu rol actual no tiene acceso a este recurso.
+            Si crees que esto es un error, contacta al administrador.
+        </p>
+        <div class="error-actions">
+            <a href="{{ url_for('home.dashboard') }}" class="btn-primary">Volver al Inicio</a>
+        </div>
+    </div>
+</body>
+</html>

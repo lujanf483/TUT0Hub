@@ -100,3 +100,9 @@ def toggle_favorite(video_id):
     
     db.session.commit()
     return jsonify({'success': True})
+
+@home_bp.route('/test-i18n')
+@login_required
+def test_i18n():
+    """Página de prueba del sistema de traducción"""
+    return render_template('test_i18n.html')

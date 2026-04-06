@@ -6,8 +6,8 @@
 
 .error-page {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
-    color: #fff;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -19,15 +19,16 @@
     max-width: 600px;
     text-align: center;
     padding: 40px;
-    background: rgba(30, 30, 30, 0.8);
+    background: var(--bg-secondary);
     border-radius: 20px;
+    border: 1px solid var(--border-color);
     box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
 }
 
 .error-code {
     font-size: 120px;
     font-weight: 900;
-    color: #ffb700;
+    color: var(--accent-color);
     line-height: 1;
     margin-bottom: 20px;
     text-shadow: 0 0 30px rgba(255, 183, 0, 0.3);
@@ -36,19 +37,19 @@
 h1 {
     font-size: 32px;
     margin-bottom: 15px;
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .error-message {
     font-size: 18px;
-    color: #ccc;
+    color: var(--text-secondary);
     margin-bottom: 15px;
     line-height: 1.6;
 }
 
 .error-suggestion {
     font-size: 16px;
-    color: #aaa;
+    color: var(--text-tertiary);
     margin-bottom: 30px;
     line-height: 1.5;
 }
@@ -73,7 +74,7 @@ h1 {
 }
 
 .btn-primary {
-    background: #ffb700;
+    background: var(--accent-color);
     color: #000;
 }
 
@@ -85,12 +86,12 @@ h1 {
 
 .btn-secondary {
     background: transparent;
-    color: #ffb700;
-    border: 2px solid #ffb700;
+    color: var(--accent-color);
+    border: 2px solid var(--accent-color);
 }
 
 .btn-secondary:hover {
-    background: #ffb700;
+    background: var(--accent-color);
     color: #000;
     transform: translateY(-2px);
 }

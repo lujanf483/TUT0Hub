@@ -1,19 +1,23 @@
 <header class="header">
     <a href="{{ url_for('home.dashboard') }}" class="logo">TUT<span>0</span>HUB</a>
     <form action="{{ url_for('search.search') }}" method="GET">
-        <input type="text" 
-               name="q" 
-               placeholder="Buscar videos..." 
+        <input type="text"
+               name="q"
+               placeholder="Buscar videos..."
                value="{{ query or '' }}"
                pattern="[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s\-]+"
                minlength="2"
-               title="Búsqueda simple - mínimo 2 caracteres">
-        <button type="submit">🔍</button>
+               title="Minimo 2 caracteres">
+        <button type="submit">Buscar</button>
     </form>
     <nav>
         <a href="{{ url_for('home.dashboard') }}">Inicio</a>
-        <a href="{{ url_for('search.advanced_search') }}">🔍 Avanzada</a>
+        <a href="{{ url_for('search.advanced_search') }}">Busqueda avanzada</a>
         <a href="{{ url_for('home.favorites') }}">Favoritos</a>
+        <a href="{{ url_for('profile.index') }}">Perfil</a>
+        {% if current_user.is_authenticated and current_user.role == 'admin' %}
+        <a href="{{ url_for('admin.index') }}" style="color:#f44336;font-weight:700;">Admin</a>
+        {% endif %}
         <a href="{{ url_for('auth.logout') }}">Salir</a>
     </nav>
 </header>

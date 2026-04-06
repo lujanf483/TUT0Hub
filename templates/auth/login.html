@@ -4,21 +4,22 @@
 {% block content %}
 <div class="login-container">
     <div class="brand-logo">TUT<span>0</span>HUB</div>
-    <h2>Iniciar Sesión</h2>
-    
+    <h2>Iniciar Sesion</h2>
     <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="input-group">
             <label>Usuario o Email</label>
-            <input type="text" name="username" required>
+            <input type="text" name="username" required autocomplete="username">
         </div>
         <div class="input-group">
-            <label>Contraseña</label>
-            <input type="password" name="password" required>
+            <label>Contrasena</label>
+            <input type="password" name="password" required autocomplete="current-password">
         </div>
         <button type="submit" class="btn-primary">ENTRAR</button>
     </form>
-    
-    <p>¿No tienes cuenta? <a href="{{ url_for('auth.register') }}">Regístrate</a></p>
+    <p style="margin-top:15px;">
+        <a href="{{ url_for('auth.forgot_password') }}" style="color:#ffb700;">Olvide mi contrasena</a>
+    </p>
+    <p>No tienes cuenta? <a href="{{ url_for('auth.register') }}">Registrate</a></p>
 </div>
 {% endblock %}

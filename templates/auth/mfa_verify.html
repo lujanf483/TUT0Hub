@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+{% block body_class %}page-login{% endblock %}
+{% block content %}
+<div class="login-container">
+    <div class="brand-logo">TUT<span>0</span>HUB</div>
+    <h2>Verificacion MFA</h2>
+    <p style="color:#aaa;margin-bottom:20px;">
+        Ingresa el codigo de 6 digitos enviado a tu correo electronico.
+    </p>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="input-group">
+            <label>Codigo de verificacion</label>
+            <input type="text" name="mfa_code" required maxlength="6"
+                   pattern="[0-9]{6}" placeholder="000000"
+                   autocomplete="one-time-code"
+                   style="text-align:center;font-size:1.8rem;letter-spacing:10px;">
+        </div>
+        <button type="submit" class="btn-primary">VERIFICAR</button>
+    </form>
+    <form method="POST" action="{{ url_for('auth.mfa_resend') }}" style="margin-top:15px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+                style="background:none;border:none;color:#ffb700;cursor:pointer;font-size:0.9rem;">
+            No recibiste el codigo? Reenviar
+        </button>
+    </form>
+    <p style="margin-top:20px;">
+        <a href="{{ url_for('auth.login') }}" style="color:#aaa;">Volver al login</a>
+    </p>
+</div>
+{% endblock %}

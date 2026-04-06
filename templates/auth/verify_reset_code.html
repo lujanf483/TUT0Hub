@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+{% block body_class %}page-login{% endblock %}
+{% block content %}
+<div class="login-container">
+    <div class="brand-logo">TUT<span>0</span>HUB</div>
+    <h2>Ingresa tu Codigo</h2>
+    <p style="color:#aaa;margin-bottom:20px;">
+        Codigo enviado por
+        <strong style="color:#ffb700;">
+            {% if method == 'sms' %}SMS{% else %}Llamada{% endif %}
+        </strong>
+        (simulado en tu correo).
+    </p>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="input-group">
+            <label>Codigo de verificacion</label>
+            <input type="text" name="code" required maxlength="6"
+                   pattern="[0-9]{6}" placeholder="000000"
+                   style="text-align:center;font-size:1.8rem;letter-spacing:10px;">
+        </div>
+        <button type="submit" class="btn-primary">VERIFICAR</button>
+    </form>
+    <p style="margin-top:20px;">
+        <a href="{{ url_for('auth.forgot_password') }}" style="color:#aaa;">Intentar de nuevo</a>
+    </p>
+</div>
+{% endblock %}

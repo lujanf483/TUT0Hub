@@ -20,6 +20,13 @@ import {
     pulseElement
 } from './animations.js';
 import { Carousel } from './carousel.js';
+import { initPreferences } from './preferences.js';
+import { translatePage, cacheOriginalTexts } from './i18n.js';
+
+// ⭐ EXPONER AL SCOPE GLOBAL INMEDIATAMENTE
+// Esto asegura que window.translatePage esté disponible cuando preferences.js lo necesite
+window.translatePage = translatePage;
+window.cacheOriginalTexts = cacheOriginalTexts;
 
 // -------------------------------------------------------
 // Estado de infinite scroll
@@ -37,6 +44,26 @@ const infiniteScrollState = {
 // -------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('[App] 🚀 DOMContentLoaded - Inicializando...');
+    
+    // ⭐ PRIMERO: Cachear los textos originales de la página
+    console.log('[App] 📦 Almacenando textos originales...');
+    if (window.cacheOriginalTexts) {
+        window.cacheOriginalTexts();
+    } else {
+        console.warn('[App] ⚠️ window.cacheOriginalTexts no está disponible');
+    }
+    
+    // ⭐ SEGUNDO: Aplicar traducción global al idioma guardado
+    console.log('[App] 🌐 Aplicando idioma guardado...');
+    if (window.translatePage) {
+        window.translatePage(); // Usa el idioma del data-language attribute
+    } else {
+        console.warn('[App] ⚠️ window.translatePage no está disponible aún');
+    }
+    
+    // Inicializar módulos de UI
+    console.log('[App] 🎨 Inicializando UI modules...');
     initScrollAnimations();
     initMagneticButtons();
     initFavorites();
@@ -44,6 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initCarousels();
     initPolling();
     initInfiniteScroll();
+    
+    // ⭐ Inicializar preferencias (para que el formulario sea interactivo)
+    console.log('[App] ⚙️ Inicializando preferences...');
+    initPreferences();
+    
+    console.log('[App] ✅ Inicialización completada');
+});
 
     // Animación escalonada de tarjetas ya presentes en el DOM
     animateCards('.video-card');

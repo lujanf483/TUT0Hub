@@ -1,0 +1,172 @@
+    {% extends "base.html" %}
+    {% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+    .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    .profile-card{background:var(--bg-secondary);border-radius:12px;padding:25px;border:1px solid var(--border-color);}
+    .profile-card h2{color:var(--accent-color);margin-bottom:20px;font-size:1.05rem;border-bottom:1px solid var(--border-color);padding-bottom:10px;}
+    .form-group{margin-bottom:15px;}
+    .form-group label{display:block;color:var(--text-secondary);margin-bottom:5px;font-size:0.85rem;}
+    .form-group input,.form-group select{width:100%;padding:10px 14px;background:var(--bg-tertiary);border:2px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:0.9rem;}
+    .form-group input:focus,.form-group select:focus{outline:none;border-color:var(--accent-color);}
+    .btn-sm{padding:8px 20px;border:none;border-radius:25px;font-weight:700;cursor:pointer;font-size:0.85rem;transition:all 0.2s ease;}
+    .btn-danger{background:#f44336;color:#fff;}
+    .btn-danger:hover{background:#e53935;}
+    .btn-warning{background:#ff9800;color:#000;}
+    .btn-warning:hover{background:#f57c00;}
+    .btn-success{background:#4caf50;color:#fff;}
+    .btn-success:hover{background:#45a049;}
+    .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:0.75rem;font-weight:700;}
+    .badge-admin{background:#f44336;color:#fff;}
+    .badge-editor{background:#ff9800;color:#000;}
+    .badge-user{background:#4caf50;color:#fff;}
+    .badge-mfa-active{background:#4caf50;color:#fff;}
+    .badge-mfa-inactive{background:#555;color:#aaa;}
+    .session-item{display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg-tertiary);border-radius:8px;margin-bottom:8px;border:1px solid var(--border-color);}
+    .session-info p{margin:0;font-size:0.85rem;color:var(--text-secondary);}
+    .session-info p:first-child{color:var(--accent-color);font-weight:700;}
+    @media(max-width:768px){.profile-grid{grid-template-columns:1fr;}}
+    </style>
+    {% endblock %}
+    {% block body_class %}page-dashboard{% endblock %}
+    {% block header %}{% include 'components/navbar.html' %}{% endblock %}
+    {% block content %}
+    <div class="dashboard-content">
+        <h1>Mi Perfil</h1>
+
+        <div style="margin-bottom:20px;">
+            <span style="color:#aaa;font-size:0.9rem;">
+                {{ current_user.username }} &mdash; {{ current_user.email }}
+            </span>
+            &nbsp;
+            <span class="badge badge-{{ current_user.role }}">{{ current_user.role.upper() }}</span>
+            <span class="badge {% if current_user.mfa_enabled %}badge-mfa-active{% else %}badge-mfa-inactive{% endif %}" style="margin-left:6px;">
+                MFA {{ 'ACTIVO' if current_user.mfa_enabled else 'INACTIVO' }}
+            </span>
+        </div>
+
+        <div class="profile-grid">
+
+            <div class="profile-card">
+                <h2>Cambiar Contrasena</h2>
+                <form method="POST" action="{{ url_for('profile.change_password') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label>Contrasena actual</label>
+                        <input type="password" name="current_password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nueva contrasena</label>
+                        <input type="password" name="new_password" required minlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirmar nueva contrasena</label>
+                        <input type="password" name="confirm_password" required>
+                    </div>
+                    <button type="submit" class="btn-sm btn-warning">Actualizar contrasena</button>
+                </form>
+            </div>
+
+            <div class="profile-card">
+                <h2>Autenticacion MFA</h2>
+                <p style="color:#aaa;margin-bottom:15px;font-size:0.9rem;">
+                    Al activar MFA recibiras un codigo por correo cada vez que inicies sesion.
+                </p>
+                {% if current_user.mfa_enabled %}
+                    <p style="color:#4caf50;margin-bottom:15px;font-size:0.9rem;">MFA esta activo.</p>
+                    <form method="POST" action="{{ url_for('profile.toggle_mfa') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="disable">
+                        <button type="submit" class="btn-sm btn-danger">Desactivar MFA</button>
+                    </form>
+                {% else %}
+                    <p style="color:#aaa;margin-bottom:15px;font-size:0.9rem;">MFA esta inactivo.</p>
+                    <form method="POST" action="{{ url_for('profile.toggle_mfa') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="action" value="enable">
+                        <button type="submit" class="btn-sm btn-success">Activar MFA</button>
+                    </form>
+                {% endif %}
+            </div>
+
+            <div class="profile-card">
+                <h2>Pregunta de Seguridad</h2>
+                {% if current_user.secret_question %}
+                    <p style="color:#4caf50;font-size:0.85rem;margin-bottom:10px;">Pregunta configurada</p>
+                    <p style="color:#888;font-size:0.85rem;margin-bottom:15px;font-style:italic;">
+                        {{ current_user.secret_question }}
+                    </p>
+                {% endif %}
+                <form method="POST" action="{{ url_for('profile.update_secret_question') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label>Pregunta</label>
+                        <select name="secret_question">
+                            <option value="Nombre de tu primera mascota">Nombre de tu primera mascota</option>
+                            <option value="Ciudad donde naciste">Ciudad donde naciste</option>
+                            <option value="Nombre de tu escuela primaria">Nombre de tu escuela primaria</option>
+                            <option value="Apellido de soltera de tu madre">Apellido de soltera de tu madre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Respuesta (se guardara cifrada)</label>
+                        <input type="text" name="secret_answer" required autocomplete="off">
+                    </div>
+                    <button type="submit" class="btn-sm btn-warning">Guardar pregunta</button>
+                </form>
+            </div>
+
+            <div class="profile-card">
+                <h2>Preferencias</h2>
+                <form method="POST" action="{{ url_for('profile.update_preferences') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label>Tema</label>
+                        <select name="theme">
+                            <option value="dark" {% if current_user.theme == 'dark' %}selected{% endif %}>Oscuro</option>
+                            <option value="light" {% if current_user.theme == 'light' %}selected{% endif %}>Claro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Idioma</label>
+                        <select name="language">
+                            <option value="es" {% if current_user.language == 'es' %}selected{% endif %}>Espanol</option>
+                            <option value="en" {% if current_user.language == 'en' %}selected{% endif %}>English</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-sm btn-success">Guardar preferencias</button>
+                </form>
+            </div>
+
+            <div class="profile-card" style="grid-column:1 / -1;">
+                <h2>Sesiones Activas</h2>
+                {% if sessions %}
+                    <form method="POST" action="{{ url_for('profile.close_all_sessions') }}"
+                        style="margin-bottom:15px;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn-sm btn-danger"
+                                onclick="return confirm('Cerrar todas las sesiones? Tendras que iniciar sesion de nuevo.')">
+                            Cerrar todas las sesiones
+                        </button>
+                    </form>
+                    {% for s in sessions %}
+                    <div class="session-item">
+                        <div class="session-info">
+                            <p style="color:#ffb700;font-weight:700;">{{ s.ip_address or 'IP desconocida' }}</p>
+                            <p style="color:#888;">{{ s.user_agent[:70] if s.user_agent else 'Navegador desconocido' }}{% if s.user_agent and s.user_agent|length > 70 %}...{% endif %}</p>
+                            <p style="color:#555;font-size:0.8rem;">Ultima actividad: {{ s.last_active.strftime('%d/%m/%Y %H:%M') }}</p>
+                        </div>
+                        <form method="POST" action="{{ url_for('profile.close_session', session_id=s.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-sm btn-danger">Cerrar</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color:#aaa;">No hay sesiones activas registradas.</p>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+    {% endblock %}

@@ -1,0 +1,116 @@
+    {% extends "base.html" %}
+    {% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <style>
+    .admin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:15px;margin-bottom:30px;}
+    .stat-card{background:#1e1e1e;border-radius:10px;padding:20px;text-align:center;}
+    .stat-number{font-size:2.5rem;font-weight:900;color:#ffb700;}
+    .stat-label{color:#aaa;font-size:0.85rem;margin-top:5px;}
+    .users-table{width:100%;border-collapse:collapse;background:#1e1e1e;border-radius:12px;overflow:hidden;}
+    .users-table th{background:#121212;color:#ffb700;padding:12px 14px;text-align:left;font-size:0.82rem;}
+    .users-table td{padding:11px 14px;border-bottom:1px solid #2a2a2a;font-size:0.88rem;}
+    .users-table tr:last-child td{border-bottom:none;}
+    .users-table tr:hover td{background:#252525;}
+    .badge{display:inline-block;padding:3px 9px;border-radius:12px;font-size:0.72rem;font-weight:700;}
+    .badge-admin{background:#f44336;color:#fff;}
+    .badge-editor{background:#ff9800;color:#000;}
+    .badge-user{background:#4caf50;color:#fff;}
+    .badge-active{background:#4caf50;color:#fff;}
+    .badge-inactive{background:#555;color:#fff;}
+    .badge-active-state{background:#4caf50;color:#fff;}
+    .badge-inactive-state{background:#666;color:#fff;}
+    .role-select{background:#121212;color:#fff;border:1px solid #333;border-radius:5px;padding:4px 8px;font-size:0.82rem;}
+    .btn-xs{padding:5px 10px;border:none;border-radius:12px;font-size:0.78rem;font-weight:700;cursor:pointer;}
+    .btn-pxs{background:#ffb700;color:#000;}
+    .btn-dxs{background:#f44336;color:#fff;}
+    .btn-sxs{background:#4caf50;color:#fff;}
+    .link-nav{padding:9px 18px;background:#1e1e1e;color:#ffb700;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;}
+    </style>
+    {% endblock %}
+    {% block body_class %}page-dashboard{% endblock %}
+    {% block header %}{% include 'components/navbar.html' %}{% endblock %}
+    {% block content %}
+    <div class="dashboard-content">
+        <h1>Panel de Administracion</h1>
+
+        <div class="admin-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ users|length }}</div>
+                <div class="stat-label">Total usuarios</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ users|selectattr('role','eq','admin')|list|length }}</div>
+                <div class="stat-label">Admins</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ users|selectattr('mfa_enabled','eq',true)|list|length }}</div>
+                <div class="stat-label">Con MFA activo</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_sessions }}</div>
+                <div class="stat-label">Sesiones activas</div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <a href="{{ url_for('admin.all_sessions') }}" class="link-nav">Ver sesiones activas</a>
+        </div>
+
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Usuario</th><th>Email</th><th>Rol</th>
+                    <th>MFA</th><th>Estado</th><th>Registrado</th><th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for user in users %}
+            <tr>
+                <td style="color:#666;">{{ user.id }}</td>
+                <td><strong>{{ user.username }}</strong></td>
+                <td style="color:#aaa;">{{ user.email }}</td>
+                <td><span class="badge badge-{{ user.role }}">{{ user.role }}</span></td>
+                <td>
+                    <span class="badge {% if user.mfa_enabled %}badge-active{% else %}badge-inactive{% endif %}">
+                        {{ 'ON' if user.mfa_enabled else 'OFF' }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge {% if user.is_active %}badge-active-state{% else %}badge-inactive-state{% endif %}">
+                        {{ 'Activo' if user.is_active else 'Inactivo' }}
+                    </span>
+                </td>
+                <td style="color:#666;font-size:0.8rem;">{{ user.created_at.strftime('%d/%m/%Y') }}</td>
+                <td>
+                    {% if user.id != current_user.id %}
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+                        <form method="POST" action="{{ url_for('admin.change_role', user_id=user.id) }}"
+                            style="display:inline-flex;gap:4px;align-items:center;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="role" class="role-select">
+                                <option value="user" {% if user.role=='user' %}selected{% endif %}>user</option>
+                                <option value="editor" {% if user.role=='editor' %}selected{% endif %}>editor</option>
+                                <option value="admin" {% if user.role=='admin' %}selected{% endif %}>admin</option>
+                            </select>
+                            <button type="submit" class="btn-xs btn-pxs">OK</button>
+                        </form>
+                        <form method="POST"
+                            action="{{ url_for('admin.toggle_active', user_id=user.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                    class="btn-xs {% if user.is_active %}btn-dxs{% else %}btn-sxs{% endif %}"
+                                    onclick="return confirm('Confirmar?')">
+                                {{ 'Desactivar' if user.is_active else 'Activar' }}
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <span style="color:#555;font-size:0.8rem;">(tu cuenta)</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endblock %}

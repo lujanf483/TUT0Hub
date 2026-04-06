@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<style>
+.sessions-table{width:100%;border-collapse:collapse;background:#1e1e1e;border-radius:12px;overflow:hidden;}
+.sessions-table th{background:#121212;color:#ffb700;padding:12px 14px;text-align:left;font-size:0.82rem;}
+.sessions-table td{padding:10px 14px;border-bottom:1px solid #2a2a2a;font-size:0.85rem;}
+.sessions-table tr:last-child td{border-bottom:none;}
+.btn-xs{padding:5px 10px;border:none;border-radius:12px;font-size:0.78rem;font-weight:700;cursor:pointer;background:#f44336;color:#fff;}
+</style>
+{% endblock %}
+{% block body_class %}page-dashboard{% endblock %}
+{% block header %}{% include 'components/navbar.html' %}{% endblock %}
+{% block content %}
+<div class="dashboard-content">
+    <h1>Sesiones Activas</h1>
+    <p style="color:#aaa;margin-bottom:15px;">
+        Total: <strong style="color:#ffb700;">{{ sessions|length }}</strong> sesiones activas
+    </p>
+    <a href="{{ url_for('admin.index') }}"
+       style="display:inline-block;margin-bottom:20px;color:#ffb700;text-decoration:none;">
+        Volver al panel
+    </a>
+    <table class="sessions-table">
+        <thead>
+            <tr>
+                <th>Usuario</th><th>IP</th><th>Navegador</th>
+                <th>Creada</th><th>Ultima actividad</th><th>Accion</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for s in sessions %}
+        <tr>
+            <td><strong>{{ s.user.username }}</strong></td>
+            <td style="color:#ffb700;">{{ s.ip_address or '-' }}</td>
+            <td style="color:#888;">
+                {{ s.user_agent[:55] if s.user_agent else '-' }}{% if s.user_agent and s.user_agent|length > 55 %}...{% endif %}
+            </td>
+            <td style="color:#666;">{{ s.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td style="color:#666;">{{ s.last_active.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>
+                <form method="POST"
+                      action="{{ url_for('admin.close_session', session_id=s.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn-xs">Cerrar</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

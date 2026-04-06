@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">{% endblock %}
+{% block body_class %}page-login{% endblock %}
+{% block content %}
+<div class="login-container">
+    <div class="brand-logo">TUT<span>0</span>HUB</div>
+    <h2>Pregunta de Seguridad</h2>
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="input-group">
+            <label>{{ question }}</label>
+            <input type="text" name="answer" required
+                   placeholder="Tu respuesta" autocomplete="off">
+        </div>
+        <button type="submit" class="btn-primary">VERIFICAR</button>
+    </form>
+    <p style="margin-top:20px;">
+        <a href="{{ url_for('auth.forgot_password') }}" style="color:#aaa;">Volver</a>
+    </p>
+</div>
+{% endblock %}
