@@ -2,11 +2,13 @@ services:
   - type: web
     name: tut0hub
     runtime: python
-    runtimeVersion: 3.11
+    runtimeVersion: "3.11"
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn run:app
+    startCommand: gunicorn run:app --workers 1 --timeout 120
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.4
-      - key: PORT
-        value: 10000
+        value: "3.11.4"
+      - key: FLASK_ENV
+        value: production
+      - key: SESSION_COOKIE_SECURE
+        value: "True"

@@ -2,20 +2,15 @@
 // app.js — Orquestador principal de TUT0hub
 // ============================================================
 
-import { debounce, toggleFavorite, loadMoreVideos, loadMoreSearchResults } from './api.js';
+import { debounce, loadMoreVideos, loadMoreSearchResults } from './api.js';
 import {
-    showLoader,
-    hideLoader,
-    showError,
     showToast,
-    updateFavoriteButton,
     appendVideosToGrid
 } from './dom.js';
 import {
     initScrollAnimations,
     animateCards,
     initMagneticButtons,
-    initParallax,
     pulseElement
 } from './animations.js';
 import { Carousel } from './carousel.js';
@@ -57,10 +52,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Inicializar modulos de UI
     initScrollAnimations();
     initMagneticButtons();
-    initFavorites();
+    // NOTA: initFavorites() fue eliminado intencionalmente.
+    // Los favoritos y el modal se manejan con event delegation
+    // directamente en cada template (dashboard.html, search.html,
+    // advanced_search.html). Tener dos listeners en document causaba
+    // que el toggle se activara y cancelara al mismo tiempo.
     initSearchDebounce();
     initCarousels();
-    initPolling();
+    // NOTA: initPolling() fue eliminado intencionalmente.
+    // El polling llamaba a /dashboard cada 30s lo cual consumia
+    // quota de la YouTube API innecesariamente en produccion.
     initInfiniteScroll();
 
     // 4. Preferencias (formulario interactivo en perfil)
@@ -71,44 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log('[App] Inicializacion completada');
 });
-
-// -------------------------------------------------------
-// Sistema de favoritos
-// -------------------------------------------------------
-
-function initFavorites() {
-    document.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.favorite-btn');
-        if (!btn) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        const videoId = btn.dataset.videoId;
-        const videoData = {
-            title: btn.dataset.title,
-            channel: btn.dataset.channel,
-            description: btn.dataset.description,
-            thumbnail: btn.dataset.thumbnail
-        };
-
-        const wasActive = btn.classList.contains('active');
-        updateFavoriteButton(btn, !wasActive);
-
-        const ok = await toggleFavorite(videoId, videoData);
-
-        if (ok) {
-            showToast(
-                wasActive ? 'Eliminado de favoritos' : 'Agregado a favoritos',
-                wasActive ? 'info' : 'success'
-            );
-            pulseElement(btn);
-        } else {
-            updateFavoriteButton(btn, wasActive);
-            showToast('Error al actualizar favoritos', 'danger');
-        }
-    });
-}
 
 // -------------------------------------------------------
 // Buscador con Debounce
@@ -148,79 +111,6 @@ function initCarousels() {
 }
 
 // -------------------------------------------------------
-// Polling — actualizacion silenciosa cada 30s
-// -------------------------------------------------------
-
-const POLL_INTERVAL_MS = 30_000;
-let pollTimer = null;
-const seenIds = new Set();
-
-function initPolling() {
-    if (!document.querySelector('.video-grid')) return;
-
-    document.querySelectorAll('[data-video-id]').forEach(el => {
-        seenIds.add(el.dataset.videoId);
-    });
-
-    poll();
-}
-
-async function poll() {
-    try {
-        const response = await fetch('/dashboard', {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
-        if (!response.ok) throw new Error('Poll failed');
-
-        const html = await response.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        let newCount = 0;
-
-        doc.querySelectorAll('[data-video-id]').forEach(card => {
-            if (!seenIds.has(card.dataset.videoId)) {
-                newCount++;
-                seenIds.add(card.dataset.videoId);
-            }
-        });
-
-        if (newCount > 0) notifyNewContent(newCount);
-
-    } catch {
-        console.log('[Polling] Sin actualizaciones');
-    } finally {
-        pollTimer = setTimeout(poll, POLL_INTERVAL_MS);
-    }
-}
-
-function notifyNewContent(count) {
-    const msg = count === 1
-        ? 'Hay 1 video nuevo disponible'
-        : `Hay ${count} videos nuevos disponibles`;
-
-    showToast(msg, 'info', 6000);
-
-    const heading = document.querySelector('.dashboard-content h1');
-    if (heading) pulseElement(heading);
-
-    const bar = document.createElement('div');
-    bar.className = 'refresh-bar';
-    bar.innerHTML = `
-        <span>${msg}</span>
-        <button onclick="location.reload()" class="btn-refresh">Actualizar</button>
-        <button onclick="this.parentElement.remove()" class="btn-dismiss">x</button>
-    `;
-    document.body.prepend(bar);
-    setTimeout(() => bar.remove(), 10_000);
-}
-
-export function stopPolling() {
-    if (pollTimer) {
-        clearTimeout(pollTimer);
-        pollTimer = null;
-    }
-}
-
-// -------------------------------------------------------
 // Infinite Scroll
 // -------------------------------------------------------
 
@@ -228,6 +118,7 @@ function initInfiniteScroll() {
     const grid = document.querySelector('.video-grid');
     if (!grid) return;
 
+    // Detectar si estamos en una página de búsqueda
     const searchInput = document.querySelector('.header input[name="q"]');
     if (searchInput && searchInput.value) {
         infiniteScrollState.isSearchResults = true;

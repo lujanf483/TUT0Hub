@@ -1,8 +1,3 @@
-# ==================================================
-# ARCHIVO: app/controllers/search_controller.py
-# ACCIÓN: REEMPLAZAR TODO EL CONTENIDO
-# ==================================================
-
 from flask import Blueprint, render_template, request, flash, jsonify
 from flask_login import login_required, current_user
 from app.services.youtube_service import search_videos, advanced_search_videos, search_videos_paginated
@@ -11,113 +6,118 @@ import re
 
 search_bp = Blueprint('search', __name__, url_prefix='/search')
 
+
 @search_bp.route('/')
 @login_required
 def search():
     query = request.args.get('q', '').strip()
     videos = []
     favorite_ids = []
-    
+
     if query:
         if not re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s\-]+$', query):
             flash('La búsqueda contiene caracteres no permitidos', 'danger')
-            return render_template('home/search.html', query='', videos=[], favorite_ids=[], page_title='Búsqueda')
-        
+            return render_template('home/search.html', query='', videos=[],
+                                   favorite_ids=[], page_title='Búsqueda')
+
         if len(query) < 2:
             flash('La búsqueda debe tener al menos 2 caracteres', 'danger')
-            return render_template('home/search.html', query='', videos=[], favorite_ids=[], page_title='Búsqueda')
-        
+            return render_template('home/search.html', query='', videos=[],
+                                   favorite_ids=[], page_title='Búsqueda')
+
         if len(query) > 100:
             flash('La búsqueda es demasiado larga (máximo 100 caracteres)', 'danger')
-            return render_template('home/search.html', query='', videos=[], favorite_ids=[], page_title='Búsqueda')
-        
+            return render_template('home/search.html', query='', videos=[],
+                                   favorite_ids=[], page_title='Búsqueda')
+
         videos = search_videos(query, max_results=12)
-        favorite_ids = [fav.video_id for fav in current_user.favorites]
-    
-    return render_template('home/search.html', query=query, videos=videos, favorite_ids=favorite_ids, page_title='Búsqueda')
+        # Una sola query a MongoDB usando el método estático (evita la @property
+        # que hace find() cada vez que se accede a current_user.favorites)
+        favorite_ids = [fav.video_id for fav in Favorite.get_by_user(current_user.id)]
+
+    return render_template('home/search.html', query=query, videos=videos,
+                           favorite_ids=favorite_ids, page_title='Búsqueda')
+
 
 @search_bp.route('/api/search', methods=['GET'])
 @login_required
 def api_search():
-    """Retorna resultados de búsqueda en JSON para infinite scroll"""
-    query = request.args.get('q', '').strip()
+    """Retorna resultados de búsqueda en JSON para infinite scroll."""
+    query      = request.args.get('q', '').strip()
     page_token = request.args.get('page_token', None, type=str)
-    per_page = request.args.get('per_page', 12, type=int)
-    
-    # Validar query
+    per_page   = request.args.get('per_page', 12, type=int)
+
     if not query or len(query) < 2:
-        return jsonify({'videos': [], 'nextPageToken': None, 'has_more': False, 'error': 'Query inválida'})
-    
+        return jsonify({'videos': [], 'nextPageToken': None,
+                        'has_more': False, 'error': 'Query inválida'})
+
     if not re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s\-]+$', query):
-        return jsonify({'videos': [], 'nextPageToken': None, 'has_more': False, 'error': 'Caracteres no permitidos'})
-    
-    # Validar per_page
+        return jsonify({'videos': [], 'nextPageToken': None,
+                        'has_more': False, 'error': 'Caracteres no permitidos'})
+
     if per_page not in [12, 24, 50]:
         per_page = 12
-    
-    # Buscar videos con paginación
+
     result = search_videos_paginated(query, max_results=per_page, page_token=page_token)
-    
-    favorite_ids = [fav.video_id for fav in current_user.favorites]
-    
+
+    # Una sola query a MongoDB (no current_user.favorites)
+    favorite_ids = [fav.video_id for fav in Favorite.get_by_user(current_user.id)]
+
     return jsonify({
         'videos': [
             {
-                'id': v['id'],
-                'title': v['title'],
-                'thumbnail': v['thumbnail'],
-                'channel': v['channel'],
+                'id':          v['id'],
+                'title':       v['title'],
+                'thumbnail':   v['thumbnail'],
+                'channel':     v['channel'],
                 'description': v['description']
             }
             for v in result['videos']
         ],
         'nextPageToken': result.get('nextPageToken'),
         'prevPageToken': result.get('prevPageToken'),
-        'has_more': bool(result.get('nextPageToken')),
-        'favorite_ids': favorite_ids
+        'has_more':      bool(result.get('nextPageToken')),
+        'favorite_ids':  favorite_ids
     })
+
 
 @search_bp.route('/advanced')
 @login_required
 def advanced_search():
-    query = request.args.get('q', '').strip()
-    category = request.args.get('category', '').strip()
-    duration = request.args.get('duration', '').strip()
+    query       = request.args.get('q', '').strip()
+    category    = request.args.get('category', '').strip()
+    duration    = request.args.get('duration', '').strip()
     date_filter = request.args.get('date_filter', '').strip()
-    order = request.args.get('order', 'relevance').strip()
+    order       = request.args.get('order', 'relevance').strip()
     max_results = request.args.get('max_results', '12').strip()
-    
+
     videos = []
-    favorite_ids = [fav.video_id for fav in current_user.favorites]
+    # Una sola query a MongoDB
+    favorite_ids = [fav.video_id for fav in Favorite.get_by_user(current_user.id)]
     searched = bool(query or category)
-    
+
     if query:
         if not re.match(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑ\s\-]+$', query):
             flash('La búsqueda contiene caracteres no permitidos', 'danger')
-            query = ''
-            searched = False
-        
+            query, searched = '', False
         elif len(query) < 2:
             flash('La búsqueda debe tener al menos 2 caracteres', 'danger')
-            query = ''
-            searched = False
-        
+            query, searched = '', False
         elif len(query) > 100:
             flash('La búsqueda es demasiado larga (máximo 100 caracteres)', 'danger')
-            query = ''
-            searched = False
-    
+            query, searched = '', False
+
     try:
         max_results_int = int(max_results)
         if max_results_int not in [12, 24, 50]:
             max_results_int = 12
-    except:
+    except Exception:
         max_results_int = 12
-    
+
     valid_orders = ['relevance', 'date', 'viewCount', 'rating']
     if order not in valid_orders:
         order = 'relevance'
-    
+
     if searched:
         videos = advanced_search_videos(
             query=query,
@@ -127,15 +127,17 @@ def advanced_search():
             order=order,
             max_results=max_results_int
         )
-    
-    return render_template('home/advanced_search.html', 
-                          query=query,
-                          category=category,
-                          duration=duration,
-                          date_filter=date_filter,
-                          order=order,
-                          max_results=max_results,
-                          videos=videos, 
-                          favorite_ids=favorite_ids,
-                          searched=searched,
-                          page_title='Búsqueda Avanzada')
+
+    return render_template(
+        'home/advanced_search.html',
+        query=query,
+        category=category,
+        duration=duration,
+        date_filter=date_filter,
+        order=order,
+        max_results=max_results,
+        videos=videos,
+        favorite_ids=favorite_ids,
+        searched=searched,
+        page_title='Búsqueda Avanzada'
+    )
