@@ -2,32 +2,16 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 <style>
-/* =====================
-   MODAL REPRODUCTOR
-   ===================== */
 .modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 2000;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    display: none; position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 2000;
+    align-items: center; justify-content: center; padding: 20px;
 }
-.modal-overlay.active {
-    display: flex;
-}
+.modal-overlay.active { display: flex; }
 .modal-container {
-    background: #1a1a1a;
-    border-radius: 16px;
-    width: 100%;
-    max-width: 900px;
-    border: 1px solid #333;
-    overflow: hidden;
+    background: #1a1a1a; border-radius: 16px; width: 100%;
+    max-width: 900px; border: 1px solid #333; overflow: hidden;
     animation: modalIn 0.25s ease;
 }
 @keyframes modalIn {
@@ -35,104 +19,22 @@
     to   { transform: scale(1);    opacity: 1; }
 }
 .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 20px;
-    background: #111;
-    border-bottom: 1px solid #2a2a2a;
-    gap: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 20px; background: #111; border-bottom: 1px solid #2a2a2a; gap: 12px;
 }
-.modal-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #fff;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
-}
-.modal-channel {
-    font-size: 0.8rem;
-    color: #aaa;
-    white-space: nowrap;
-}
-.modal-close {
-    background: none;
-    border: none;
-    color: #aaa;
-    font-size: 1.6rem;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0 0 0 12px;
-    transition: color 0.2s;
-    flex-shrink: 0;
-}
+.modal-title { font-size: 0.95rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.modal-channel { font-size: 0.8rem; color: #aaa; white-space: nowrap; }
+.modal-close { background: none; border: none; color: #aaa; font-size: 1.6rem; cursor: pointer; line-height: 1; padding: 0 0 0 12px; transition: color 0.2s; flex-shrink: 0; }
 .modal-close:hover { color: #fff; }
-.modal-video-wrapper {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    background: #000;
-}
-.modal-video-wrapper iframe {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    border: none;
-}
-.modal-footer {
-    padding: 12px 20px;
-    background: #111;
-    border-top: 1px solid #2a2a2a;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-.modal-description {
-    font-size: 0.82rem;
-    color: #888;
-    flex: 1;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-}
+.modal-video-wrapper { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+.modal-video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+.modal-footer { padding: 12px 20px; background: #111; border-top: 1px solid #2a2a2a; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.modal-description { font-size: 0.82rem; color: #888; flex: 1; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .modal-actions { display: flex; gap: 8px; flex-shrink: 0; }
-.btn-yt {
-    padding: 7px 16px;
-    background: #ff0000;
-    color: #fff;
-    border: none;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    transition: background 0.2s;
-}
+.btn-yt { padding: 7px 16px; background: #ff0000; color: #fff; border: none; border-radius: 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; transition: background 0.2s; }
 .btn-yt:hover { background: #cc0000; }
-.btn-fav-modal {
-    padding: 7px 16px;
-    background: transparent;
-    color: #ffb700;
-    border: 2px solid #ffb700;
-    border-radius: 20px;
-    font-size: 0.82rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.btn-fav-modal:hover,
-.btn-fav-modal.active {
-    background: #ffb700;
-    color: #000;
-}
-
-/* Clases de utilidad */
+.btn-fav-modal { padding: 7px 16px; background: transparent; color: #ffb700; border: 2px solid #ffb700; border-radius: 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.btn-fav-modal:hover, .btn-fav-modal.active { background: #ffb700; color: #000; }
 .cursor-pointer { cursor: pointer; }
 </style>
 {% endblock %}
@@ -149,9 +51,7 @@
     </h1>
 
     {% if videos %}
-        <p style="color:#aaa; margin-bottom:20px;">
-            {{ videos|length }} resultado(s) encontrado(s)
-        </p>
+        <p style="color:#aaa; margin-bottom:20px;">{{ videos|length }} resultado(s) encontrado(s)</p>
         <div class="video-grid">
         {% for video in videos %}
             <div class="card video-card"
@@ -160,14 +60,12 @@
                  data-channel="{{ video.channel|e }}"
                  data-description="{{ video.description|e }}"
                  data-thumbnail="{{ video.thumbnail }}">
-                 
+
                 <div class="video-thumbnail cursor-pointer js-open-modal">
                     <img src="{{ video.thumbnail }}" alt="{{ video.title }}" loading="lazy">
-                    <div class="video-overlay">
-                        <span class="play-icon">&#9654;</span>
-                    </div>
+                    <div class="video-overlay"><span class="play-icon">&#9654;</span></div>
                 </div>
-                
+
                 <div class="video-info">
                     <div class="video-header">
                         <h3 class="video-title cursor-pointer js-open-modal">
@@ -179,31 +77,24 @@
                         </button>
                     </div>
                     <p class="video-channel">{{ video.channel }}</p>
-                    <p class="video-description">
-                        {{ video.description[:100] }}{% if video.description|length > 100 %}...{% endif %}
-                    </p>
+                    <p class="video-description">{{ video.description[:100] }}{% if video.description|length > 100 %}...{% endif %}</p>
                 </div>
             </div>
         {% endfor %}
         </div>
-
     {% elif query %}
-        <div style="text-align:center; padding:60px 20px; background:#1e1e1e; border-radius:12px;">
-            <p style="color:#aaa; font-size:1.1rem;">
-                No se encontraron resultados para "<strong style="color:#fff;">{{ query }}</strong>".
-            </p>
-            <p style="color:#666; margin-top:8px;">Intenta con otras palabras clave.</p>
+        <div style="text-align:center;padding:60px 20px;background:#1e1e1e;border-radius:12px;">
+            <p style="color:#aaa;font-size:1.1rem;">No se encontraron resultados para "<strong style="color:#fff;">{{ query }}</strong>".</p>
+            <p style="color:#666;margin-top:8px;">Intenta con otras palabras clave.</p>
         </div>
-
     {% else %}
-        <div style="text-align:center; padding:60px 20px; background:#1e1e1e; border-radius:12px;">
-            <p style="color:#aaa; font-size:1.1rem;">
-                Escribe algo en el buscador para encontrar videos.
-            </p>
+        <div style="text-align:center;padding:60px 20px;background:#1e1e1e;border-radius:12px;">
+            <p style="color:#aaa;font-size:1.1rem;">Escribe algo en el buscador para encontrar videos.</p>
         </div>
     {% endif %}
 </div>
 
+<!-- MODAL REPRODUCTOR -->
 <div class="modal-overlay" id="videoModal">
     <div class="modal-container">
         <div class="modal-header">
@@ -212,59 +103,40 @@
             <button class="modal-close" id="closeModalBtn" title="Cerrar">&#x2715;</button>
         </div>
         <div class="modal-video-wrapper">
-            <iframe id="modalIframe"
-                    src=""
+            <iframe id="modalIframe" src=""
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen>
-            </iframe>
+                    allowfullscreen></iframe>
         </div>
         <div class="modal-footer">
             <p class="modal-description" id="modalDescription"></p>
             <div class="modal-actions">
-                <button class="btn-fav-modal" id="modalFavBtn">
-                    Agregar a favoritos
-                </button>
-                <a class="btn-yt" id="modalYTLink" href="#" target="_blank" rel="noopener noreferrer">
-                    Ver en YouTube
-                </a>
+                <button class="btn-fav-modal" id="modalFavBtn">Agregar a favoritos</button>
+                <a class="btn-yt" id="modalYTLink" href="#" target="_blank" rel="noopener noreferrer">Ver en YouTube</a>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// =====================
-// VARIABLES GLOBALES
-// =====================
 let currentVideoData = null;
-
-// =====================
-// REPRODUCTOR MODAL
-// =====================
-const modal = document.getElementById('videoModal');
-const iframe = document.getElementById('modalIframe');
+const modal       = document.getElementById('videoModal');
+const iframe      = document.getElementById('modalIframe');
 const modalFavBtn = document.getElementById('modalFavBtn');
 
 function openPlayer(videoData) {
     currentVideoData = videoData;
-
     iframe.src = `https://www.youtube.com/embed/${videoData.id}?autoplay=1&rel=0`;
-    document.getElementById('modalTitle').textContent = videoData.title;
-    document.getElementById('modalChannel').textContent = videoData.channel;
-    document.getElementById('modalDescription').textContent = videoData.description.substring(0, 120) + (videoData.description.length > 120 ? '...' : '');
+    document.getElementById('modalTitle').textContent       = videoData.title;
+    document.getElementById('modalChannel').textContent     = videoData.channel;
+    document.getElementById('modalDescription').textContent =
+        videoData.description.substring(0, 120) + (videoData.description.length > 120 ? '...' : '');
     document.getElementById('modalYTLink').href = `https://youtube.com/watch?v=${videoData.id}`;
 
-    // Sincronizar estado del botón de favoritos
-    const card = document.querySelector(`.video-card[data-video-id="${videoData.id}"]`);
+    const card   = document.querySelector(`.video-card[data-video-id="${videoData.id}"]`);
     const favBtn = card ? card.querySelector('.favorite-btn') : null;
-    
-    if (favBtn && favBtn.classList.contains('active')) {
-        modalFavBtn.classList.add('active');
-        modalFavBtn.textContent = 'Quitar de favoritos';
-    } else {
-        modalFavBtn.classList.remove('active');
-        modalFavBtn.textContent = 'Agregar a favoritos';
-    }
+    const isFav  = favBtn && favBtn.classList.contains('active');
+    modalFavBtn.classList.toggle('active', isFav);
+    modalFavBtn.textContent = isFav ? 'Quitar de favoritos' : 'Agregar a favoritos';
 
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -277,96 +149,64 @@ function closePlayer() {
     currentVideoData = null;
 }
 
-// Abrir modal (delegación de eventos)
-document.querySelectorAll('.js-open-modal').forEach(el => {
-    el.addEventListener('click', function() {
-        const card = this.closest('.video-card');
+// EVENT DELEGATION — funciona para cards estáticos Y dinámicos (infinite scroll)
+document.body.addEventListener('click', function(e) {
+    const openTrigger = e.target.closest('.js-open-modal');
+    if (openTrigger) {
+        const card = openTrigger.closest('.video-card');
+        if (!card) return;
         openPlayer({
-            id: card.dataset.videoId,
-            title: card.dataset.title,
-            channel: card.dataset.channel,
-            description: card.dataset.description,
+            id: card.dataset.videoId, title: card.dataset.title,
+            channel: card.dataset.channel, description: card.dataset.description,
             thumbnail: card.dataset.thumbnail
         });
-    });
+        return;
+    }
+    const favTrigger = e.target.closest('.favorite-btn');
+    if (favTrigger && !favTrigger.id) {
+        e.preventDefault(); e.stopPropagation();
+        const card = favTrigger.closest('.video-card');
+        if (!card) return;
+        handleToggleFavorite({
+            id: card.dataset.videoId, title: card.dataset.title,
+            channel: card.dataset.channel, description: card.dataset.description,
+            thumbnail: card.dataset.thumbnail
+        }, favTrigger, false);
+    }
 });
 
-// Cerrar modal
 document.getElementById('closeModalBtn').addEventListener('click', closePlayer);
-modal.addEventListener('click', function(e) {
-    if (e.target === modal) closePlayer();
-});
-document.addEventListener('keydown', function(e) {
+modal.addEventListener('click', e => { if (e.target === modal) closePlayer(); });
+document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && modal.classList.contains('active')) closePlayer();
 });
+modalFavBtn.addEventListener('click', function() {
+    if (currentVideoData) handleToggleFavorite(currentVideoData, this, true);
+});
 
-// =====================
-// LÓGICA DE FAVORITOS
-// =====================
-async function handleToggleFavorite(videoData, btnElement, isModal = false) {
+async function handleToggleFavorite(videoData, btnElement, isModal) {
     try {
-        const response = await fetch(`/toggle-favorite/${videoData.id}`, {
+        const res = await fetch(`/toggle-favorite/${videoData.id}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}'
-            },
-            body: JSON.stringify({
-                title: videoData.title,
-                channel: videoData.channel,
-                description: videoData.description,
-                thumbnail: videoData.thumbnail
-            })
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
+            body: JSON.stringify({ title: videoData.title, channel: videoData.channel, description: videoData.description, thumbnail: videoData.thumbnail })
         });
-
-        if (response.ok) {
-            const isActive = btnElement.classList.toggle('active');
-            const card = document.querySelector(`.video-card[data-video-id="${videoData.id}"]`);
-            const cardFavBtn = card ? card.querySelector('.favorite-btn') : null;
-
-            if (isModal) {
-                btnElement.textContent = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
-                if (cardFavBtn) {
-                    cardFavBtn.classList.toggle('active', isActive);
-                    cardFavBtn.innerHTML = isActive ? '&#9733;' : '&#9734;';
-                    cardFavBtn.title = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
-                }
-            } else {
-                btnElement.innerHTML = isActive ? '&#9733;' : '&#9734;';
-                btnElement.title = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
-                if (currentVideoData && currentVideoData.id === videoData.id) {
-                    modalFavBtn.classList.toggle('active', isActive);
-                    modalFavBtn.textContent = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
-                }
+        if (!res.ok) return;
+        const isActive = btnElement.classList.toggle('active');
+        const card    = document.querySelector(`.video-card[data-video-id="${videoData.id}"]`);
+        const cardBtn = card ? card.querySelector('.favorite-btn') : null;
+        if (isModal) {
+            btnElement.textContent = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
+            if (cardBtn) { cardBtn.classList.toggle('active', isActive); cardBtn.innerHTML = isActive ? '&#9733;' : '&#9734;'; cardBtn.title = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos'; }
+        } else {
+            btnElement.innerHTML = isActive ? '&#9733;' : '&#9734;';
+            btnElement.title = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
+            if (currentVideoData && currentVideoData.id === videoData.id) {
+                modalFavBtn.classList.toggle('active', isActive);
+                modalFavBtn.textContent = isActive ? 'Quitar de favoritos' : 'Agregar a favoritos';
             }
         }
-    } catch (error) {
-        console.error('Error al toggle favorito:', error);
-    }
+    } catch (err) { console.error('Error al toggle favorito:', err); }
 }
-
-// Click favoritos en Modal
-modalFavBtn.addEventListener('click', function() {
-    if (currentVideoData) {
-        handleToggleFavorite(currentVideoData, this, true);
-    }
-});
-
-// Click favoritos en Tarjetas
-document.querySelectorAll('.favorite-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const card = this.closest('.video-card');
-        handleToggleFavorite({
-            id: card.dataset.videoId,
-            title: card.dataset.title,
-            channel: card.dataset.channel,
-            description: card.dataset.description,
-            thumbnail: card.dataset.thumbnail
-        }, this, false);
-    });
-});
 </script>
 {% endblock %}

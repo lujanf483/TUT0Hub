@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 from flask import Flask, render_template
 from flask_login import LoginManager
 from flask_limiter import Limiter
@@ -6,6 +7,9 @@ from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect
 from flask_mail import Mail
 from pymongo import MongoClient
+
+# Cargar .env en desarrollo (en Render las variables vienen del panel)
+load_dotenv()
 
 login_manager = LoginManager()
 limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
@@ -94,22 +98,17 @@ def create_app():
 
 def _create_indexes(db):
     """Crea los indices de MongoDB para mejorar el rendimiento."""
-    # Usuarios
     db.users.create_index('username', unique=True)
     db.users.create_index('email', unique=True)
 
-    # Sesiones
     db.user_sessions.create_index('session_token', unique=True)
     db.user_sessions.create_index('user_id')
     db.user_sessions.create_index('is_active')
 
-    # Refresh tokens
     db.refresh_tokens.create_index('token', unique=True)
     db.refresh_tokens.create_index('user_id')
 
-    # Password resets
     db.password_resets.create_index('token', unique=True)
     db.password_resets.create_index('user_id')
 
-    # Favoritos
     db.favorites.create_index([('user_id', 1), ('video_id', 1)], unique=True)
