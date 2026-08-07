@@ -49,8 +49,14 @@ def create_app():
 
     # Conectar a MongoDB
     global mongo_client, mongo_db
-    mongo_client = MongoClient(app.config['MONGODB_URI'])
-    mongo_db = mongo_client[app.config['MONGODB_DBNAME']]
+    try:
+        mongo_client = MongoClient(app.config['MONGODB_URI'], serverSelectionTimeoutMS=3000)
+        mongo_client.admin.command('ping')
+        mongo_db = mongo_client[app.config['MONGODB_DBNAME']]
+    except Exception as exc:
+        app.logger.warning('No se pudo conectar a MongoDB (%s). Usando un almacenamiento en memoria.', exc)
+        mongo_client = None
+        mongo_db = _create_in_memory_db()
 
     # Crear indices necesarios
     with app.app_context():
@@ -94,6 +100,111 @@ def create_app():
         return render_template('errors/403.html'), 403
 
     return app
+
+
+def _create_in_memory_db():
+    """Crea un objeto con una API mínima compatible con las operaciones de MongoDB usadas por la app."""
+
+    class _Collection:
+        def __init__(self, name):
+            self.name = name
+            self._docs = []
+
+        def create_index(self, *args, **kwargs):
+            return None
+
+        def find_one(self, query=None):
+            if query is None:
+                return None
+            for doc in self._docs:
+                if self._matches(doc, query):
+                    return doc
+            return None
+
+        def find(self, query=None):
+            docs = self._docs if query is None else [doc for doc in self._docs if self._matches(doc, query)]
+            return _Cursor(docs)
+
+        def insert_one(self, doc):
+            doc = dict(doc)
+            doc['_id'] = len(self._docs) + 1
+            self._docs.append(doc)
+            return type('InsertResult', (), {'inserted_id': doc['_id']})()
+
+        def update_one(self, query, update):
+            for doc in self._docs:
+                if self._matches(doc, query):
+                    for key, value in update.get('$set', {}).items():
+                        doc[key] = value
+                    return None
+            return None
+
+        def update_many(self, query, update):
+            for doc in self._docs:
+                if self._matches(doc, query):
+                    for key, value in update.get('$set', {}).items():
+                        doc[key] = value
+            return None
+
+        def delete_one(self, query):
+            for index, doc in enumerate(self._docs):
+                if self._matches(doc, query):
+                    del self._docs[index]
+                    break
+            return None
+
+        def count_documents(self, query=None):
+            return len([doc for doc in self._docs if self._matches(doc, query or {})])
+
+        def _matches(self, doc, query):
+            if not query:
+                return True
+            if isinstance(query, dict):
+                for key, value in query.items():
+                    if key == '$or':
+                        return any(self._matches(doc, item) for item in value)
+                    if key == '$and':
+                        return all(self._matches(doc, item) for item in value)
+                    if key == '$set':
+                        continue
+                    if isinstance(value, dict):
+                        if '$gt' in value and not (doc.get(key, None) is not None and doc.get(key) > value['$gt']):
+                            return False
+                        if '$lt' in value and not (doc.get(key, None) is not None and doc.get(key) < value['$lt']):
+                            return False
+                        if '$ne' in value and doc.get(key) == value['$ne']:
+                            return False
+                        continue
+                    if doc.get(key) != value:
+                        return False
+            return True
+
+    class _Cursor:
+        def __init__(self, docs):
+            self._docs = docs
+
+        def sort(self, *args, **kwargs):
+            return self
+
+        def __iter__(self):
+            return iter(self._docs)
+
+        def __len__(self):
+            return len(self._docs)
+
+        def __getitem__(self, item):
+            return self._docs[item]
+
+    class _DB:
+        def __init__(self):
+            self.users = _Collection('users')
+            self.user_sessions = _Collection('user_sessions')
+            self.refresh_tokens = _Collection('refresh_tokens')
+            self.password_resets = _Collection('password_resets')
+            self.favorites = _Collection('favorites')
+            self.captcha_store = _Collection('captcha_store')
+
+    return _DB()
 
 
 def _create_indexes(db):
